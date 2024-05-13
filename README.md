@@ -1,4 +1,4 @@
-# C-PIE (Compound-Protein Interaction Extract) -- A software package to collect and harmonize small molecule and protein interactions
+# C-PIE (Compound-Protein Interaction Extract) - A software package to collect and harmonize small molecule and protein interactions
 ### Author: Andrea Piras
 # Package Description
 C-PIE is a tool to extract, filter and harmonize Compound-Protein Interaction (CPI) data from 9 databases, providing the output in tabular format (csv).\
