@@ -1,0 +1,10 @@
+Papers/*
+__pycache__/*
+data/*
+!data/input/
+*.pyc
+results/*
+.ipynb_checkpoints/
+tests/*
+plots/*
+tests.ipynb
