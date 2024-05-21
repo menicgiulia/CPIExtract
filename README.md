@@ -39,7 +39,7 @@ P2C = Prot2Comp(execution_mode='local', dbs=data)
 ```
 ### Server execution
 The databases are stored on the mySQL server.
-```python 
+```python
 from cpie.pipelines import Comp2Prot
 from cpie.pipelines import Prot2Comp
 
@@ -59,14 +59,16 @@ Comp2Prot accepts the following parameters:
 - input_id: the compound id
 - pChEMBL_thresh: the minimum interaction pChEMBL value required to be added to the output file
 - stitch_stereo: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
-- otp_biblio: to select whether to include also the *bibliography* data from OTP 
+- otp_biblio: to select whether to include the *bibliography* data from OTP. This parameter is only available for Comp2Prot as OTP provides only known drug interactions for proteins
+- dtc_mutated: to select whether also to consider interactions with mutated target proteins from DTC
+- dc_extra: to select whether to include possibly non-Homo sapiens interactions
 
-The output will include all the interactions found and a dataframe containing the statements for all the datasets for the specific input compound. 
-```python 
+The output will include all the interactions found and a dataframe containing the statements for all the datasets for the specific input compound.
+```python
 # Chlorpromazine InChIKey
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
-interactions, db_states = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False)
+interactions, db_states = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
 ```
 To extract interactions only from selected databases, use the alternate function specifying which databases to use in a underscore separated string (to include all databases, which equates to using the previous function, use `'pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db'`).
 ```python
@@ -74,18 +76,20 @@ To extract interactions only from selected databases, use the alternate function
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False)
+interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
 ```
 Prot2Comp works similarly, with the exception that both functions only have the following additional parameters, as OTP will retrieve only known compounds interacting with the input protein:
 - pChEMBL_thresh: the minimum interaction pChEMBL value required to be added to the output file
 - stitch_stereo: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+- dtc_mutated: to select whether also to consider interactions with mutated target proteins from DTC
+- dc_extra: to select whether to include possibly non-Homo sapiens interactions
 ```python
 # HGNC symbol for Kallikrein-1
 prot_id = 'KLK1'
 
 interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=0, stitch_stereo=True)
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True)
+interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False)
 ```
 ## Data Availablity
 To operate the package, it is necessary to download the databases `.csv` and `.tsv` files, unzip if necessary, and move them to the data folder. \

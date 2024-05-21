@@ -7,32 +7,35 @@ from .Pipeline import Pipeline
 
 class Prot2Comp(Pipeline):
 
-    def _update_args(self, pChEMBL_thres, stitch_stereo):
+    def _update_args(self, pChEMBL_thres, stitch_stereo, dtc_mutated, dc_extra):
         self.database_args = {
             'pc': (pChEMBL_thres,),
             'chembl': (pChEMBL_thres,),
             'bdb': (pChEMBL_thres,),
             'stitch': (stitch_stereo,),
             'ctd': (),
-            'dtc': (pChEMBL_thres,),
+            'dtc': (dtc_mutated, pChEMBL_thres,),
             'otp': (),
-            'dc': (pChEMBL_thres,),
+            'dc': (dc_extra, pChEMBL_thres,),
             'db': (),
         }      
 
     # Calls functions to collect data and merges all the data from the various sources together
-    def prot_interactions(self, input_id, pChEMBL_thres=0, stitch_stereo=True):
+    def prot_interactions(self, input_id, pChEMBL_thres=0, stitch_stereo=True, 
+                          dtc_mutated=False, dc_extra=False):
 
         # Run interaction select with all databases selected
-        prot_comp, state = self.prot_interactions_select(input_id, pChEMBL_thres=pChEMBL_thres, stitch_stereo=stitch_stereo)
+        prot_comp, state = self.prot_interactions_select(input_id, pChEMBL_thres=pChEMBL_thres, stitch_stereo=stitch_stereo, 
+                                                         dtc_mutated=dtc_mutated, dc_extra=dc_extra)
         
         return prot_comp, state
             
 
     # Calls functions to collect data and merges all the data from the selected sources together
-    def prot_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', pChEMBL_thres=0, stitch_stereo=True):
+    def prot_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
+                                 pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False):
 
-        self._update_args(pChEMBL_thres, stitch_stereo)
+        self._update_args(pChEMBL_thres, stitch_stereo, dtc_mutated, dc_extra)
 
         prot_ids = protein_identifiers(input_id)
 

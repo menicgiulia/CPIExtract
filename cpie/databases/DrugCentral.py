@@ -17,17 +17,18 @@ class DrugCentral(Database):
         else:
             self.data_manager = SQLManager(connection, 'DC')
 
-    def _filter_database(self, dc_raw: pd.DataFrame):
-        invalid_action_types = ['PHARMACOLOGICAL CHAPERONE', 'RELEASING AGENT']
-        invalid_classes = ['CD molecules', 'RNA', 'Unclassified', 'Viral envelope protein', 'Polyprotein']
+    def _filter_database(self, dc_raw: pd.DataFrame, dc_extra: bool):
 
         dc_filt = dc_raw.dropna(subset=['ACTION_TYPE'])
         dc_filt = dc_filt.loc[(dc_filt['ORGANISM']=='Homo sapiens') &
                              (dc_filt['ACT_TYPE'].isin(['IC50', 'Ki', 'EC50', 'Kd', 'AC50'])) &
-                             (~dc_filt['ACTION_TYPE'].isin(invalid_action_types)) &
-                             (~dc_filt['TARGET_CLASS'].isin(invalid_classes)) &
                              (dc_filt['ACT_SOURCE'] != 'UNKNOWN')]\
                                 .drop_duplicates(ignore_index=True).copy()
+        if not dc_extra:
+            invalid_action_types = ['PHARMACOLOGICAL CHAPERONE', 'RELEASING AGENT']
+            invalid_classes = ['CD molecules', 'RNA', 'Unclassified', 'Viral envelope protein', 'Polyprotein']
+            dc_filt = dc_filt.loc[(~dc_filt['ACTION_TYPE'].isin(invalid_action_types)) & 
+                                  (~dc_filt['TARGET_CLASS'].isin(invalid_classes))].copy()
         return dc_filt
     
 
@@ -41,7 +42,7 @@ class DrugCentral(Database):
 
         return dc_act
 
-    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0):
+    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0):
         """
         Retrieves proteins from DrugCentral database interacting with compound passed as input.
 
@@ -61,6 +62,8 @@ class DrugCentral(Database):
         ----------
         input_comp : DataFrame
             Dataframe of input compound data from which interacting proteins are found
+        dc_extra: bool
+            bool to select whether to include possibly non-Homo sapiens interactions
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
             
@@ -88,7 +91,7 @@ class DrugCentral(Database):
             dc_raw = self.data_manager.retrieve_raw_data('InChIKey', input_comp_id)
             if len(dc_raw) > 0:
                 # Filter database
-                dc_filt = self._filter_database(dc_raw)
+                dc_filt = self._filter_database(dc_raw, dc_extra)
                 dc_filt.drop(['SMILES','InChI'], axis=1, inplace=True)
                 # Compute pchembl values
                 dc_act = self._compute_pchembl(dc_filt, pChEMBL_thres)
@@ -133,7 +136,7 @@ class DrugCentral(Database):
         return dc_act, statement, dc_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0):
         """
         Retrieves compounds from DrugCentral database interacting with proteins passed as input.
 
@@ -153,6 +156,8 @@ class DrugCentral(Database):
         ----------
         input_protein : DataFrame
             Dataframe of input proteins from which interacting compound are found
+        dc_extra: bool
+            bool to select whether to include possibly non-Homo sapiens interactions
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid       
 
@@ -177,7 +182,7 @@ class DrugCentral(Database):
             dc_raw = self.data_manager.retrieve_raw_data('ACCESSION', input_protein_id)
             if len(dc_raw):
                 # Filter database
-                dc_c = self._filter_database(dc_raw)
+                dc_c = self._filter_database(dc_raw, dc_extra)
                 
                 # Compute pchembl values
                 dc_act = self._compute_pchembl(dc_c, pChEMBL_thres)

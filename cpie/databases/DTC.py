@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import time
 from ..servers.BiomartServer import BiomartServer
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..servers.PubchemServer import PubChemServer
@@ -45,17 +44,16 @@ class DTC(Database):
         return DTC_filt
         
 
-    def _standardize_database(self, DTC_raw: pd.DataFrame, pChEMBL_thres: float):
+    def _standardize_database(self, DTC_raw: pd.DataFrame, dtc_mutated: bool, pChEMBL_thres: float):
 
                     # Only use interactions with reported sources
         DTC_act = DTC_raw[(DTC_raw['doc_type'].notnull()) & 
                         # Remove inconclusive and undetermined activities
-                        (~DTC_raw['activity_comment'].isin(['inconclusive', 'Not Active'])) & 
-                        # Remove all mutated data
-                        (DTC_raw['wildtype_or_mutant'] != 'mutated') & 
-                        (DTC_raw['mutation_info'].isnull())
-                        ].reset_index(drop=True)
-        
+                        (~DTC_raw['activity_comment'].isin(['inconclusive', 'Not Active']))].reset_index(drop=True)
+        if not dtc_mutated:
+            # Remove all mutated data
+            DTC_act = DTC_act[(DTC_act['wildtype_or_mutant'] != 'mutated') & 
+                        (DTC_act['mutation_info'].isnull())].reset_index(drop=True)
         # Converts all the measured values into nM for the calculation of pChEMBL
         DTC_act = self._standard_converter(DTC_act)
         # Convert infinite values to nan
@@ -74,7 +72,7 @@ class DTC(Database):
         return DTC_act
             
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, pChEMBL_thres: float=0):
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, pChEMBL_thres: float=0):
         """
         Retrieves proteins from DTC database interacting with compound passed as input.
 
@@ -103,6 +101,8 @@ class DTC(Database):
             Dataframe of input compounds from which interacting proteins are found
         chembl_ids : list
             list of chembl ids for the input compounds
+        dtc_mutated: bool
+            bool to select whether to included mutated targets interactions
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
         
@@ -139,7 +139,7 @@ class DTC(Database):
                 DTC_filt['molecular_weight'] = input_comp['molecular_weight'].iloc[0]
 
                 # Filter database
-                DTC_act = self._standardize_database(DTC_filt, pChEMBL_thres)
+                DTC_act = self._standardize_database(DTC_filt, dtc_mutated, pChEMBL_thres)
                 
                 # Note: DTC has no tax_id or species column, can only filter for human via biomart conversion
                 if len(DTC_act) > 0:
@@ -182,7 +182,7 @@ class DTC(Database):
         return DTC_act, statement, DTC_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0):
         """
         Retrieves compounds from DTC database interacting with proteins passed as input.
 
@@ -202,6 +202,8 @@ class DTC(Database):
             Dataframe of input proteins from which interacting compound are found
         DTC_data : DataFrame
             Dataframe containing all DTC database info
+        dtc_mutated: bool
+            bool to select whether to included mutated targets interactions
         pChEMBL_thres : integer
             Threshold for pChEMBL value to be valid
 
@@ -253,7 +255,7 @@ class DTC(Database):
                     # Check if there are any compounds remaining
                     if len(DTC_c) > 0:
                         # Standardize database
-                        DTC_act = self._standardize_database(DTC_c, pChEMBL_thres)
+                        DTC_act = self._standardize_database(DTC_c, dtc_mutated, pChEMBL_thres)
 
                         if len(DTC_act) > 0:
                             # Extend compounds information

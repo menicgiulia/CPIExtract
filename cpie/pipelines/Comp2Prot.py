@@ -6,36 +6,39 @@ from .Pipeline import Pipeline
 
 class Comp2Prot(Pipeline):
 
-    def _update_args(self, pChEMBL_thres, stitch_stereo, otp_biblio, chembl_ids):
+    def _update_args(self, pChEMBL_thres, stitch_stereo, otp_biblio, dtc_mutated, dc_extra, chembl_ids):
         self.database_args = {
             'pc': (pChEMBL_thres,),
             'chembl': (chembl_ids, pChEMBL_thres,),
             'bdb': (pChEMBL_thres,),
             'stitch': (stitch_stereo,),
             'ctd': (),
-            'dtc': (chembl_ids, pChEMBL_thres,),
+            'dtc': (chembl_ids, dtc_mutated, pChEMBL_thres,),
             'otp': (chembl_ids, otp_biblio,),
-            'dc': (pChEMBL_thres,),
+            'dc': (dc_extra, pChEMBL_thres,),
             'db': (),
         }       
 
 
     # Calls functions to collect data and merges all the data from the various sources together
-    def comp_interactions(self, input_id, pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False):
+    def comp_interactions(self, input_id, pChEMBL_thres=0, stitch_stereo=True, 
+                          otp_biblio=False, dtc_mutated=False, dc_extra=False):
         
         # Run interaction select with all databases selected
         comp_tar, state = self.comp_interactions_select(input_id, pChEMBL_thres=pChEMBL_thres, 
-                                                    stitch_stereo=stitch_stereo, otp_biblio=otp_biblio)
+                                                    stitch_stereo=stitch_stereo, otp_biblio=otp_biblio, 
+                                                    dtc_mutated=dtc_mutated, dc_extra=dc_extra)
         return comp_tar, state
 
     # Calls functions to collect data and merges all the data from the selected sources together
-    def comp_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False):
+    def comp_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
+                                 pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False):
         #pChEMBL_thres default 0: Will only interactions without activity data in sources with activity data present
         #stitch_stereo default True: True=stereo specific False=non-specific stereochemistry (True ensures exact match to input_id)
         #otp_biblio default False: False=mechanism data only True=mechanism and bibliography (False ensures real interactions, avoids keyword search matches within abstracts that can lead to false associations that are not real interactions)
         
         chembl_ids = []
-        self._update_args(pChEMBL_thres, stitch_stereo, otp_biblio, chembl_ids)
+        self._update_args(pChEMBL_thres, stitch_stereo, otp_biblio, dtc_mutated, dc_extra, chembl_ids)
 
         main_columns = ['entrez','gene_type','hgnc_symbol','description','pchembl_value','datasource']
         comp_tar = pd.DataFrame(columns=main_columns)
