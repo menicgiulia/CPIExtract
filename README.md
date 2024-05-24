@@ -94,9 +94,9 @@ interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selecte
 ## Data Availablity
 To operate the package, it is necessary to download the databases `.csv` and `.tsv` files, unzip if necessary, and move them to the data folder. \
 We strongly recommend preprocessing the databases to obtain significantly faster pipelines execution times. \
-To ease this process, we provide two notebooks to [download](db_downloader.ipynb) and [preprocess](db_preprocessing.ipynb) the databases.
+To ease this process, we provide two notebooks to [download](db_download.ipynb) and [preprocess](db_preprocessing.ipynb) the databases.
 ### Disclaimer
-- The ChEMBL database requires the generation of the `.csv` file from the [ChEMBL website](https://www.ebi.ac.uk/chembl/web_components/explore/activities/). In the page, select the *Homo sapiens* target organism in the filtering section on the right. Then, clicking on the csv download button will start the file generation. Once the generation is complete, press the download button.
+- The ChEMBL database requires the generation of the `.csv` file from the [ChEMBL website](https://www.ebi.ac.uk/chembl/web_components/explore/activities/). More information is provided in the python notebook.
 - The DrugBank database requires an academic license to download, please refer to the [DrugBank website](https://go.drugbank.com/releases/latest) for further instructions.
 ## Data reproducibility
 Preprocessed data used to obtain the results reported in the paper is available in the following [OneDrive folder](https://polimi365-my.sharepoint.com/:f:/g/personal/10725972_polimi_it/EvrlSHPslQZFttZUz3DiyOoBdTu1Q0DwWBkR0GD0GxaHWQ?e=pSsYZt). 
@@ -159,6 +159,3 @@ Root folder organization (```__init__.py``` files removed for simplicity):
         ├───helper.py                               // helper functions and classes
         └───identifiers.py                          // functions to extract identifiers for compounds and proteins
 ```
-
-
-

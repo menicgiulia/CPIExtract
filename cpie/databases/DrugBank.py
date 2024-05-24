@@ -167,8 +167,6 @@ class DB(Database):
             # Search compounds interacting with input gene
             input_protein_id = input_protein['hgnc_id'][0]
 
-            # DB_data = self._preprocess_db(DB_data)
-
             DB_raw = self.data_manager.retrieve_raw_data('HGNC', input_protein_id)
             
             # Check if at least one interaction has been found
@@ -234,77 +232,77 @@ class DB(Database):
         return db_c1, statement, DB_raw
 
 
-    def _find_compound_info(self, DB_act):
-        """
-        Extract compound info (inchikey) from DrugBank database and stores it into a new column.
+    # def _find_compound_info(self, DB_act):
+    #     """
+    #     Extract compound info (inchikey) from DrugBank database and stores it into a new column.
     
-        Parameters
-        ----------
-        DB_act : DataFrame
-            DrugBank database
+    #     Parameters
+    #     ----------
+    #     DB_act : DataFrame
+    #         DrugBank database
 
-        Returns
-        -------
-        DataFrame
-            Drugbank database with a column containing compound inchikey 
-        """
-        for index, row in DB_act.iterrows():
-            if type(row['calculated-properties']) == dict:
-                for prop in row['calculated-properties'].values():
-                    try:
-                        if prop['kind'][0][0] == 'InChIKey':
-                            DB_act.loc[index, 'InChIKey'] = prop['value'][0][0]
-                            break
-                    except:
-                        None
-        return DB_act
+    #     Returns
+    #     -------
+    #     DataFrame
+    #         Drugbank database with a column containing compound inchikey 
+    #     """
+    #     for index, row in DB_act.iterrows():
+    #         if type(row['calculated-properties']) == dict:
+    #             for prop in row['calculated-properties'].values():
+    #                 try:
+    #                     if prop['kind'][0][0] == 'InChIKey':
+    #                         DB_act.loc[index, 'InChIKey'] = prop['value'][0][0]
+    #                         break
+    #                 except:
+    #                     None
+    #     return DB_act
 
 
-    def preprocess_db(self, DB_data):
+    # def preprocess_db(self, DB_data):
 
-        DB_data['name'] = DB_data['name'].apply(lambda x: x[0][0].lower() if x else None)
-        DB_data['drugbank-id'] = DB_data['drugbank-id'].apply(lambda x: x[0][0] if x else None)
+    #     DB_data['name'] = DB_data['name'].apply(lambda x: x[0][0].lower() if x else None)
+    #     DB_data['drugbank-id'] = DB_data['drugbank-id'].apply(lambda x: x[0][0] if x else None)
 
-        # Add inchikey column
-        DB_data['InChIKey'] = None
-        # Extract inchikey
-        DB_data = self._find_compound_info(DB_data)
+    #     # Add inchikey column
+    #     DB_data['InChIKey'] = None
+    #     # Extract inchikey
+    #     DB_data = self._find_compound_info(DB_data)
 
-        protein_data = defaultdict(list)
-        for _, row in DB_data.iterrows():
-            hgncs = []
-            organisms = []
-            protein_names = []
-            protein_types = []
-            for prot_type in ['targets', 'carriers', 'enzymes', 'transporters']:
-                if row[prot_type]:
-                    for prot in row[prot_type].values():
-                        try:
-                            HGNC = prot['polypeptide']['external-identifiers']['external-identifier']['identifier'][0][0]
-                            try:
-                                organism = prot['organism'][0][0]
-                            except:
-                                organism = None
-                            protein_name = prot['name'][0][0]
-                        except (KeyError, TypeError):
-                            HGNC = None
-                            organism = None
-                            protein_name = None
-                        hgncs.append(HGNC)
-                        organisms.append(organism)
-                        protein_names.append(protein_name)
-                        protein_types.append(prot_type)
-            protein_data['HGNCs'].append(hgncs)
-            protein_data['organisms'].append(organism)
-            protein_data['protein_names'].append(protein_names)
-            protein_data['types'].append(protein_types)
+    #     protein_data = defaultdict(list)
+    #     for _, row in DB_data.iterrows():
+    #         hgncs = []
+    #         organisms = []
+    #         protein_names = []
+    #         protein_types = []
+    #         for prot_type in ['targets', 'carriers', 'enzymes', 'transporters']:
+    #             if row[prot_type]:
+    #                 for prot in row[prot_type].values():
+    #                     try:
+    #                         HGNC = prot['polypeptide']['external-identifiers']['external-identifier']['identifier'][0][0]
+    #                         try:
+    #                             organism = prot['organism'][0][0]
+    #                         except:
+    #                             organism = None
+    #                         protein_name = prot['name'][0][0]
+    #                     except (KeyError, TypeError):
+    #                         HGNC = None
+    #                         organism = None
+    #                         protein_name = None
+    #                     hgncs.append(HGNC)
+    #                     organisms.append(organism)
+    #                     protein_names.append(protein_name)
+    #                     protein_types.append(prot_type)
+    #         protein_data['HGNCs'].append(hgncs)
+    #         protein_data['organisms'].append(organism)
+    #         protein_data['protein_names'].append(protein_names)
+    #         protein_data['types'].append(protein_types)
 
-        new_data = pd.DataFrame({'HGNC': protein_data['HGNCs'], 
-                                        'organism': protein_data['organisms'], 
-                                        'protein_name': protein_data['protein_names'],
-                                        'protein_type': protein_data['types']})
+    #     new_data = pd.DataFrame({'HGNC': protein_data['HGNCs'], 
+    #                                     'organism': protein_data['organisms'], 
+    #                                     'protein_name': protein_data['protein_names'],
+    #                                     'protein_type': protein_data['types']})
 
-        DB_data = pd.concat([DB_data, new_data], axis=1)
-        DB_data = DB_data.explode(['HGNC', 'protein_name', 'protein_type']).reset_index(drop=True)
-        DB_data = DB_data[['drugbank-id', 'name', 'InChIKey', 'HGNC', 'organism', 'protein_name', 'protein_type']]
-        return DB_data
+    #     DB_data = pd.concat([DB_data, new_data], axis=1)
+    #     DB_data = DB_data.explode(['HGNC', 'protein_name', 'protein_type']).reset_index(drop=True)
+    #     DB_data = DB_data[['drugbank-id', 'name', 'InChIKey', 'HGNC', 'organism', 'protein_name', 'protein_type']]
+    #     return DB_data
