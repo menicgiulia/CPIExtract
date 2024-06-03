@@ -13,17 +13,70 @@ An exemplative pipeline workflow is depicted in the figure below. An equivalent 
 ![Comp2Prot pipeline workflow example](/images/pipeline.png)
 ## Prot2Comp
 The pipeline follows a workflow similar to the other pipeline. It extracts protein information from an input identifier using the Biomart Python package. It performs the same database matching and filtering, and then harmonizes the interaction data extracting compounds information with the PubChemPy Python package. The output is finally returned to the user in a `.csv` file. 
-# Package Information
+# Package Information: Getting started
+## Data Availablity
+To operate the package, it is necessary to have downloaded databases `.csv` and `.tsv` files either in the data folder or stored in a mySQL server as tables. \
+We provide the compressed preprocessed data used to obtain the results reported in the paper in the data folder. \
+This data is to be used with the [Local Execution mode](#local-execution). 
+
+Extract the files with the following code:
+```bash
+# replace root path with appropriate location (e.g., /home/username/)
+cd root/path/C-PIE/data/
+# unzip file
+unzip Databases.zip
+```
+## Data Update
+Although the data used is up to date, each database periodically releases updated versions that will make the zipped data obsolete. 
+For this reason, we suggest periodically redownloading the databases in order to have the latest CPI information available.
+We also strongly recommend preprocessing the databases to obtain significantly faster pipelines execution times. \
+To ease this process, we provide two notebooks to [download](db_download.ipynb) and [preprocess](db_preprocessing.ipynb) the databases.
+### Disclaimer
+- The ChEMBL database requires the generation of the `.csv` file from the [ChEMBL website](https://www.ebi.ac.uk/chembl/web_components/explore/activities/). More information is provided in the python notebook.
+- The DrugBank database requires an academic license to download, please refer to the [DrugBank website](https://go.drugbank.com/releases/latest) for further instructions.
 ## Example execution
 The package provides two classes, one for each pipeline: Comp2Prot and Prot2Comp. 
 The pipelines can be instanciated in two ways:
 ### Local execution
-Load locally the databases when executing the pipeline. 
+Load locally the databases when executing the pipeline. \
+To load the databases, follow the [example notebook](/Comp2Prot_example.ipynb) at cell 2 (Load in Required Datasets).
 ```python 
 from cpie.pipelines.Comp2Prot import Comp2Prot
 from cpie.pipelines.Prot2Comp import Prot2Comp
+import pandas as pd
+import os
 
-# Data stored in pandas dataframes, see example notebooks for the an example code to read the csv files
+# Root data path
+data_path = 'data'
+
+#Downloaded from BindingDB on 3/30/2023
+file_path=os.path.join(data_path, 'BindingDB.csv')
+BDB_data=pd.read_csv(file_path,sep=',',usecols=['CID', 'Ligand SMILES','Ligand InChI','BindingDB MonomerID','Ligand InChI Key','BindingDB Ligand Name','Target Name Assigned by Curator or DataSource','Target Source Organism According to Curator or DataSource','Ki (nM)','IC50 (nM)','Kd (nM)','EC50 (nM)','pH','Temp (C)','Curation/DataSource','UniProt (SwissProt) Entry Name of Target Chain','UniProt (SwissProt) Primary ID of Target Chain'],on_bad_lines='skip')
+
+#Downloaded from STITCH on 2/22/2023
+file_path=os.path.join(data_path, 'STITCH.tsv')
+sttch_data=pd.read_csv(file_path,sep='\t')
+
+#Downloaded from ChEMBL on 2/01/2024
+file_path=os.path.join(data_path, 'ChEMBL.csv')
+chembl_data=pd.read_csv(file_path,sep=',')
+
+file_path=os.path.join(data_path, 'CTD.csv')
+CTD_data=pd.read_csv(file_path,sep=',')
+
+#Downloaded from DTC on 2/24/2023
+file_path=os.path.join(data_path, 'DTC.csv')
+DTC_data=pd.read_csv(file_path,sep=',',usecols=['CID', 'compound_id','standard_inchi_key','target_id','gene_names','wildtype_or_mutant','mutation_info','standard_type','standard_relation','standard_value','standard_units','activity_comment','pubmed_id','doc_type'])
+
+#Downloaded from DrugBank on 3/2/2022
+file_path=os.path.join(data_path, 'DB.csv')
+DB_data=pd.read_csv(file_path, sep=',')
+
+#Downloaded from DrugCentral on 2/25/2024
+file_path=os.path.join(data_path, 'DrugCentral.csv')
+DC_data=pd.read_csv(file_path, sep=',')
+
+# Data stored in pandas dataframes
 data = {
     'chembl': chembl_data,
     'bdb': BDB_data,
@@ -38,7 +91,9 @@ C2P = Comp2Prot(execution_mode='local', dbs=data)
 P2C = Prot2Comp(execution_mode='local', dbs=data)
 ```
 ### Server execution
-The databases are stored on the mySQL server.
+The databases are stored on the mySQL server. Users must have a working mySQL server. \
+We suggest using [mySQL Workbench CE](https://dev.mysql.com/downloads/workbench/). Once setup, create a database named `cpie` and load the downloaded databases as tables into the SQL database.
+
 ```python
 from cpie.pipelines import Comp2Prot
 from cpie.pipelines import Prot2Comp
@@ -54,7 +109,9 @@ info = {
 C2P = Comp2Prot(execution_mode='server', server_info=info)
 P2C = Prot2Comp(execution_mode='server', server_info=info)
 ```
-To run the pipelines, call either `comp_interactions` or `comp_interactions_select` for Comp2Prot, and either `prot_interactions` or `prot_interactions_select` for Prot2Comp. \
+## How to run the pipelines
+Once instantiated, to run the pipelines call either `comp_interactions` or `comp_interactions_select` for Comp2Prot, and either `prot_interactions` or `prot_interactions_select` for Prot2Comp. 
+### Comp2Prot
 Comp2Prot accepts the following parameters:
 - input_id: the compound id
 - pChEMBL_thresh: the minimum interaction pChEMBL value required to be added to the output file
@@ -78,6 +135,7 @@ comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
 interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
 ```
+### Prot2Comp
 Prot2Comp works similarly, with the exception that both functions only have the following additional parameters, as OTP will retrieve only known compounds interacting with the input protein:
 - pChEMBL_thresh: the minimum interaction pChEMBL value required to be added to the output file
 - stitch_stereo: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
@@ -87,29 +145,10 @@ Prot2Comp works similarly, with the exception that both functions only have the 
 # HGNC symbol for Kallikrein-1
 prot_id = 'KLK1'
 
-interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=0, stitch_stereo=True)
+interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False)
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
 interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False)
 ```
-## Data Availablity
-To operate the package, it is necessary to download the databases `.csv` and `.tsv` files, unzip if necessary, and move them to the data folder. \
-We strongly recommend preprocessing the databases to obtain significantly faster pipelines execution times. \
-To ease this process, we provide two notebooks to [download](db_download.ipynb) and [preprocess](db_preprocessing.ipynb) the databases.
-### Disclaimer
-- The ChEMBL database requires the generation of the `.csv` file from the [ChEMBL website](https://www.ebi.ac.uk/chembl/web_components/explore/activities/). More information is provided in the python notebook.
-- The DrugBank database requires an academic license to download, please refer to the [DrugBank website](https://go.drugbank.com/releases/latest) for further instructions.
-## Data reproducibility
-Preprocessed data used to obtain the results reported in the paper is available in the following [OneDrive folder](https://polimi365-my.sharepoint.com/:f:/g/personal/10725972_polimi_it/EvrlSHPslQZFttZUz3DiyOoBdTu1Q0DwWBkR0GD0GxaHWQ?e=pSsYZt). 
-### Download instructions
-Download the .zip file databases into a folder of choice and then extract it into the data/ folder:
-```bash
-# replace download path with appropriate location (e.g., /home/downloads/)
-cd download/path/
-wget https://polimi365-my.sharepoint.com/:f:/g/personal/10725972_polimi_it/EvrlSHPslQZFttZUz3DiyOoBdTu1Q0DwWBkR0GD0GxaHWQ?e=pSsYZt
-# replace root path with appropriate location (e.g., /home/username/)
-unzip filename.zip -d root/path/compound-protein-interaction/data
-```
-
 ## Package Structure
 Root folder organization (```__init__.py``` files removed for simplicity):
 ```plaintext
