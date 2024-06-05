@@ -20,7 +20,7 @@ class Database(ABC):
         db_act = db_act.dropna(subset=['CID'])
         cids = db_act['CID'].astype(int).unique()
         # Create a list from cids to make batch search using Pubchempy
-        cids = [str(x) for x in cids if 'error' not in str(x)]
+        cids = [str(x) for x in cids if 'error' not in str(x) and x != 0]
         db_comps = pd.DataFrame(columns=columns)
         selected_columns = pc.get_columns(columns[:-2])
         if len(cids) > 0:
@@ -58,7 +58,7 @@ class Database(ABC):
                     existing_id.append(ids)
                 else:
                     missing_id.append(ids)
-            except (TypeError,KeyError,NameError):
+            except:
                 missing_id.append(ids)
             time.sleep(0.5)
 
@@ -81,7 +81,7 @@ class Database(ABC):
                     # Use Pubchempy to find compounds based on inchi
                     pubchem_inchi.append(pc.get_compounds(ids[0], selected_columns, namespace='inchi'))
                     existing_id.append(ids[1])
-                except (TypeError,KeyError):
+                except:
                     None
                 time.sleep(0.5)
         # Check if at least one compound has been found using Pubchempy with inchi

@@ -270,7 +270,7 @@ class BindingDB(Database):
                             try:
                                 comp = pc.get_compounds(bdb_id, selected_columns, namespace='name')
                                 compounds = pd.concat([compounds, comp])
-                            except (TypeError,KeyError,NameError):
+                            except:
                                 None
                             time.sleep(0.5)
                         # Check if at least a match has been found

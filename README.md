@@ -92,7 +92,7 @@ P2C = Prot2Comp(execution_mode='local', dbs=data)
 ```
 ### Server execution
 The databases are stored on the mySQL server. Users must have a working mySQL server. \
-We suggest using [mySQL Workbench CE](https://dev.mysql.com/downloads/workbench/). Once setup, create a database named `cpie` and load the downloaded databases as tables into the SQL database.
+We suggest using [mySQL Workbench CE](https://dev.mysql.com/downloads/workbench/). Once setup, create a database schema named `cpie` and load the **downloaded and preprocessed** databases as tables into the SQL database, which can be done using the provided [SQL_load](SQL_load.ipynb) notebook.
 
 ```python
 from cpie.pipelines import Comp2Prot

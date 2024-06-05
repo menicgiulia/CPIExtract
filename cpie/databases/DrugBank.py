@@ -202,7 +202,7 @@ class DB(Database):
                                 # Retrieve compound using pubchempy
                                 comp = (pc.get_compounds(inchi, selected_columns, namespace='inchikey'))
                                 compounds = pd.concat([compounds, comp])
-                            except (TypeError,KeyError,NameError):
+                            except:
                                 None
                             time.sleep(0.5)
 

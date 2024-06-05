@@ -1,6 +1,6 @@
 from abc import ABC
 from ..databases import *
-from ..sql_connection.sql_connection import connect_to_mysql
+from ..sql_connection import connect_to_mysql
 import pandas as pd
 import numpy as np
 
@@ -25,7 +25,7 @@ class Pipeline(ABC):
                 "host": "127.0.0.1",
                 "user": "user",
                 "password": "password",
-                "database": "network_medicine",
+                "database": "cpie",
             }
         """
 
@@ -43,6 +43,7 @@ class Pipeline(ABC):
             if server_info is None:
                 raise ValueError("Server info not specified.")
             
+            dbs = {}
             self.cnx = connect_to_mysql(config=server_info)
 
             if not self.cnx or not self.cnx.is_connected():

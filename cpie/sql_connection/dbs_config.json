@@ -1,0 +1,144 @@
+{
+    "BindingDB": {
+        "name": "BDB",
+        "file": "BindingDB.csv",
+        "columns": {
+            "Ligand SMILES": "VARCHAR(1000)",
+            "Ligand InChI": "VARCHAR(1000)",
+            "Ligand InChI Key": "CHAR(27)",
+            "BindingDB MonomerID": "INT",
+            "BindingDB Ligand Name": "VARCHAR(255)",
+            "Target Name Assigned by Curator or DataSource": "VARCHAR(255)",
+            "Target Source Organism According to Curator or DataSource": "VARCHAR(255)",
+            "Ki (nM)": "FLOAT",
+            "IC50 (nM)": "FLOAT",
+            "Kd (nM)": "FLOAT",
+            "EC50 (nM)": "FLOAT",
+            "pH": "FLOAT",
+            "Temp (C)": "VARCHAR(20)",
+            "Curation/DataSource": "VARCHAR(255)",
+            "UniProt (SwissProt) Entry Name of Target Chain": "VARCHAR(50)",
+            "UniProt (SwissProt) Primary ID of Target Chain": "VARCHAR(50)",
+            "CID": "INT"
+          }
+          
+    },
+    "ChEMBL": {
+        "name": "CHEMBL",
+        "file": "ChEMBL.csv",
+        "columns": {
+            "Molecule ChEMBL ID": "VARCHAR(255)",
+            "Molecule Name": "VARCHAR(255)",
+            "Smiles": "VARCHAR(1000)",
+            "Standard Type": "VARCHAR(50)",
+            "Standard Value": "FLOAT",
+            "Standard Units": "VARCHAR(255)",
+            "pChEMBL Value": "FLOAT",
+            "Data Validity Comment": "VARCHAR(255)",
+            "Comment": "TEXT",
+            "Target ChEMBL ID": "VARCHAR(255)",
+            "Target Name": "VARCHAR(255)",
+            "Target Organism": "VARCHAR(255)",
+            "Target Type": "VARCHAR(255)",
+            "Source ID": "INT",
+            "Action Type": "VARCHAR(255)",
+            "CID": "INT"
+        } 
+    },
+    "CTD": {
+        "name": "CTD",
+        "file": "CTD.csv",
+        "columns": {
+            "Unnamed": "VARCHAR(255)",
+            "ChemicalName": "VARCHAR(255)", 
+            "ChemicalID": "VARCHAR(255)", 
+            "CasRN": "VARCHAR(255)", 
+            "GeneSymbol": "VARCHAR(255)", 
+            "GeneID": "VARCHAR(255)",
+            "GeneForms": "VARCHAR(255)", 
+            "Organism": "VARCHAR(255)", 
+            "OrganismID": "VARCHAR(255)", 
+            "Interaction": "TEXT", 
+            "InteractionActions": "VARCHAR(255)", 
+            "PubMedIDs": "TEXT",
+            "CID": "INT"
+        }
+    },
+    "DrugBank": {
+        "name": "DB",
+        "file": "DB.csv",
+        "columns": {
+            "drugbank-id": "VARCHAR(50)",
+            "name": "VARCHAR(255)",
+            "InChIKey": "CHAR(27)", 
+            "HGNC": "VARCHAR(20)", 
+            "organism": "VARCHAR(50)", 
+            "protein_name": "VARCHAR(255)",
+            "protein_type": "VARCHAR(50)", 
+            "CID": "INT"
+        }
+    },
+    "DrugCentral": {
+        "name": "DC",
+        "file": "DrugCentral.csv",
+        "columns": {
+            "DRUG_NAME": "VARCHAR(255)", 
+            "STRUCT_ID": "INT", 
+            "TARGET_NAME": "VARCHAR(255)",
+            "TARGET_CLASS": "VARCHAR(255)",
+            "ACCESSION": "VARCHAR(20)",
+            "GENE": "VARCHAR(20)",
+            "SWISSPROT": "VARCHAR(50)",
+            "ACT_VALUE": "FLOAT", 
+            "ACT_UNIT": "VARCHAR(50)", 
+            "ACT_TYPE": "VARCHAR(50)", 
+            "ACT_COMMENT": "TEXT",
+            "ACT_SOURCE": "VARCHAR(255)", 
+            "RELATION": "VARCHAR(255)", 
+            "MOA": "VARCHAR(255)", 
+            "MOA_SOURCE": "VARCHAR(255)", 
+            "ACT_SOURCE_URL": "VARCHAR(255)",
+            "MOA_SOURCE_URL": "VARCHAR(255)", 
+            "ACTION_TYPE": "VARCHAR(100)", 
+            "TDL": "VARCHAR(50)", 
+            "ORGANISM": "VARCHAR(100)", 
+            "SMILES": "VARCHAR(1000)", 
+            "InChI": "VARCHAR(1000)",
+            "InChIKey": "CHAR(27)",
+            "CID": "INT"
+        }
+    },
+    "DTC": {
+        "name": "DTC",
+        "file": "DTC.csv",
+        "columns": {
+            "compound_id": "VARCHAR(100)",
+            "standard_inchi_key": "CHAR(27)",
+            "target_id": "VARCHAR(50)",
+            "gene_names": "VARCHAR(20)",
+            "wildtype_or_mutant": "VARCHAR(50)",
+            "mutation_info": "VARCHAR(255)",
+            "standard_type": "VARCHAR(50)",
+            "standard_relation": "VARCHAR(50)",
+            "standard_value": "FLOAT",
+            "standard_units": "VARCHAR(50)",
+            "activity_comment": "VARCHAR(255)",
+            "pubmed_id": "VARCHAR(50)",
+            "doc_type": "VARCHAR(255)",
+            "CID": "INT"
+        }
+    },
+    "STITCH": {
+        "name": "STITCH",
+        "file": "STITCH.tsv",
+        "columns": {
+            "chemical": "VARCHAR(50)", 
+            "protein": "VARCHAR(255)", 
+            "experimental": "INT", 
+            "prediction": "INT", 
+            "database": "INT",
+            "textmining": "INT", 
+            "combined_score": "INT"
+        }
+    }
+}

@@ -211,7 +211,7 @@ class DrugCentral(Database):
                             try:
                                 comp = pc.get_compounds(id, selected_columns, namespace='inchikey')
                                 compounds = pd.concat([compounds, comp])
-                            except (TypeError,KeyError,NameError):
+                            except:
                                 None
                             time.sleep(0.5)
                         # Check if at least a match has been found

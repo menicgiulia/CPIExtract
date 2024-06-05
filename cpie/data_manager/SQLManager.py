@@ -13,8 +13,12 @@ class SQLManager(DataManager):
         with self.data.cursor() as cursor:
             try:
                 # SQL query to select data from the table where the specified column has a certain value
-                query = f"SELECT * FROM {self.database} WHERE {filter_column} = %s"
-                cursor.execute(query, (filter_value,))
+                query = f"SELECT * FROM {self.database} WHERE `{filter_column}` in (%s)"
+                if type(filter_value) == list:
+                    values = ",".join(filter_value)
+                    cursor.execute(query, (values,))
+                else:
+                    cursor.execute(query, (filter_value,))
 
                 # Fetch all the rows
                 rows = cursor.fetchall()
