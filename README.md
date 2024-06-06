@@ -169,7 +169,10 @@ To ease this process, we provide two notebooks to download ([db_download.ipynb](
 
 ### SQL Server
 Users can also load the databases into a mySQL server. \
-We suggest using [mySQL Workbench CE](https://dev.mysql.com/downloads/workbench/). Once setup, create a database schema named `cpie` and load the **downloaded and preprocessed** databases as tables into the SQL database, which can be done using the provided [SQL_load.ipynb](SQL_load.ipynb) notebook.
+1. We suggest using [mySQL Workbench CE](https://dev.mysql.com/downloads/workbench/). Once setup, create a database schema named `cpie`.
+2. (If the package has been installed with pip) \
+Download the [`dbs_config.json`](data/dbs_config.json) and save it into the data folder.
+3. Load the **downloaded and preprocessed** databases as tables into the SQL database, which can be done using the provided [SQL_load.ipynb](SQL_load.ipynb) notebook.
 
 ## Example execution
 ### Pipelines instantiation
@@ -297,6 +300,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 │   PCE_testing.ipynb                               // PCE pipeline testing notebook
 │
 ├───data                                            // database storage location
+├───dbs_config.json                                 // file with databases configuration for the mySQL server
 │   └───input                                       // pipeline input data location
 │
 └───cpie
@@ -330,7 +334,6 @@ Root folder organization (```__init__.py``` files removed for simplicity):
     │   └───PubChemServer.py                        // to connect to PubChem API
     │
     ├───sql_server  
-    │   ├───dbs_config.json                         // file with databases configuration for the mySQL server                                 
     │   └───sql_conncetion.py                       // to connect to the SQL server
     │
     └───utils                                        

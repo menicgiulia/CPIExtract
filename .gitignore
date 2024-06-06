@@ -2,6 +2,7 @@ Papers/*
 __pycache__/*
 data/*
 !data/input/
+!data/dbs_config.json
 *.pyc
 results/*
 .ipynb_checkpoints/
