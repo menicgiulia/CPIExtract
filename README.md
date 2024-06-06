@@ -182,8 +182,7 @@ The pipelines can be instanciated in two ways:
 Load locally the databases when executing the pipeline. \
 To load the databases, follow the example notebook [Comp2Prot_example.ipynb](Comp2Prot_example.ipynb) at cell 2 (Load in Required Datasets).
 ```python 
-from cpie.pipelines.Comp2Prot import Comp2Prot
-from cpie.pipelines.Prot2Comp import Prot2Comp
+from cpie import Comp2Prot, Prot2Comp
 import pandas as pd
 import os
 
@@ -235,8 +234,7 @@ P2C = Prot2Comp(execution_mode='local', dbs=data)
 The databases are stored on the mySQL server. 
 
 ```python
-from cpie.pipelines import Comp2Prot
-from cpie.pipelines import Prot2Comp
+from cpie import Comp2Prot, Prot2Comp
 
 # Exmeplative dictionary containing the configuration info to connect to the mySQL server
 info = {
