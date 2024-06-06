@@ -1,4 +1,4 @@
-# C-PIE (Compound-Protein Interaction Extract)
+# CPIExtract (Compound-Protein Interaction Extract)
 ## A software package to collect and harmonize small molecule and protein interactions
 ##### Authors: Andrea Piras, Shi Chenghao, Michael Sebek, Giulia Menichetti (giulia.menichetti@channing.harvard.edu)
 ## Introduction
@@ -7,7 +7,7 @@ Yet, experimental data available regarding compound-protein interaction (CPI) is
 entity but rather scattered across multiple institutions, each maintaining databases with different formats.
 Extracting information from these multiple sources remains challenging due to data heterogeneity.
 
-C-PIE interactively extracts, filters and harmonizes CPI data from 9 databases, providing the output in tabular format (csv).\
+CPIExtract interactively extracts, filters and harmonizes CPI data from 9 databases, providing the output in tabular format (csv).\
 The package provides two separate pipelines:
 - Comp2Prot: Extract protein target interactions for compounds provided as input
 - Prot2Comp: Extract compound interactions for proteins provided as input
@@ -29,12 +29,12 @@ The pipeline follows a workflow similar to the other pipeline. It extracts prote
 2. Copy the project to your local or remote machine:
 
    ```bash
-      git clone https://github.com/menicgiulia/C-PIE.git
+      git clone https://github.com/menicgiulia/CPIExtract.git
    ```
 3. Navigate to the project directory:
 
    ```bash
-      cd C-PIE
+      cd CPIExtract-main
    ```
 
 4. Installing the necessary dependencies:
@@ -52,7 +52,7 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 
 - Activate your new conda environment:
 
-      conda activate cpie
+      conda activate CPIExtract
   
 ##### Option B: working without Conda
 
@@ -60,24 +60,24 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 
       pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client  
             
-5. Set up your PYTHONPATH (Replace `/user_path_to/C-PIE/cpie` with the appropriate path of the package in your local/remote machine.):
+5. Set up your PYTHONPATH (Replace `/user_path_to/CPIExtract/CPIExtract` with the appropriate path of the package in your local/remote machine.):
 
     _On Linux/Mac_:
    
       ```bash
-      export PYTHONPATH="/user_path_to/C-PIE/cpie":$PYTHONPATH
+      export PYTHONPATH="/user_path_to/CPIExtract/CPIExtract":$PYTHONPATH
       ```
       
     _On Windows shell_:
 
     ```bash
-      set PYTHONPATH="C:\\user_path_to\\C-PIE\\cpie";%PYTHONPATH%
+      set PYTHONPATH="C:\\user_path_to\\CPIExtract\\CPIExtract";%PYTHONPATH%
     ```
       
     _On Powershell_:
 
     ```bash
-      $env:PYTHONPATH = "C:\\user_path_to\\C-PIE\\cpie;" + $env:PYTHONPATH
+      $env:PYTHONPATH = "C:\\user_path_to\\CPIExtract\\CPIExtract;" + $env:PYTHONPATH
     ```
     
       
@@ -100,7 +100,7 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 
 - Activate your new conda environment:
 
-      conda activate cpie
+      conda activate CPIExtract
   
 ##### Option B: working without Conda
 
@@ -111,7 +111,7 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 2. Install the package:
 
       ```bash
-      pip install c-pie
+      pip install CPIExtract
       ```
 #### Using Jupyter Notebooks
 We provide several Jupyer Notebooks to simplify the databases download and mantenaince. In order to use these notebooks, follow these steps:
@@ -157,7 +157,7 @@ This data is to be used with the [Local Execution mode](#local-execution).
 Extract the files with the following code:
 ```bash
 # replace root path with appropriate location (e.g., /home/username/)
-cd root/path/C-PIE/data/
+cd root/path/CPIExtract/data/
 # unzip file
 unzip Databases.zip
 ```
@@ -182,7 +182,7 @@ The pipelines can be instanciated in two ways:
 Load locally the databases when executing the pipeline. \
 To load the databases, follow the example notebook [Comp2Prot_example.ipynb](Comp2Prot_example.ipynb) at cell 2 (Load in Required Datasets).
 ```python 
-from cpie import Comp2Prot, Prot2Comp
+from CPIExtract import Comp2Prot, Prot2Comp
 import pandas as pd
 import os
 
@@ -234,7 +234,7 @@ P2C = Prot2Comp(execution_mode='local', dbs=data)
 The databases are stored on the mySQL server. 
 
 ```python
-from cpie import Comp2Prot, Prot2Comp
+from CPIExtract import Comp2Prot, Prot2Comp
 
 # Exmeplative dictionary containing the configuration info to connect to the mySQL server
 info = {
@@ -301,7 +301,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 ├───dbs_config.json                                 // file with databases configuration for the mySQL server
 │   └───input                                       // pipeline input data location
 │
-└───cpie
+└───CPIExtract
     │   
     ├───data_manager                                
     │   ├───APIManager.py                           // to extract raw data from databases' APIs
@@ -340,7 +340,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 ```
 ## Further information
 
-- Details about each function (what is it used for, what are the input parameters, the possible values of the input parameters, what is the output) from the pipeline are available in the `cpie` folder, in the comments before each class function. 
+- Details about each function (what is it used for, what are the input parameters, the possible values of the input parameters, what is the output) from the pipeline are available in the `CPIExtract` folder, in the comments before each class function. 
 - An example on the use of the implemented functions is available in the notebooks [Comp2Prot_example.ipynb](Comp2Prot_example.ipynb) and [Prot2Comp_example.ipynb](Prot2Comp_example.ipynb), which can be executed in order to test the proper installation of the package and it's functionalities.
 
 ## License

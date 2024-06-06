@@ -4,23 +4,18 @@ with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    version='0.1.42',
-    name='C-PIE',
+    version='0.1.1',
+    name='CPIExtract',
     author='Andrea Piras, Shi Chenghao, Michael Sebek, Giulia Menichetti',
     author_email='giulia.menichetti@channing.harvard.edu',
-    description='C-PIE is a software package to collect and harmonize small molecule and protein interactions.',
+    description='CPIExtract is a software package to collect and harmonize small molecule and protein interactions.',
     keywords='data-science, bioinformatics, cheminformatics, proteins, network-science, data-harmonization, binding-affinity, chemical-compounds',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/menicgiulia/C-PIE',
+    url='https://github.com/menicgiulia/CPIExtract',
     packages=setuptools.find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
