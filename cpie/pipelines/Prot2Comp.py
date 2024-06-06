@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import multiprocessing as mp
 from ..databases import *
 from ..utils.identifiers import protein_identifiers
 from .Pipeline import Pipeline
