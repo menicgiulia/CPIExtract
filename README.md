@@ -1,7 +1,9 @@
 # CPIExtract (Compound-Protein Interaction Extract)
 ## A software package to collect and harmonize small molecule and protein interactions
 ##### Authors: Andrea Piras, Shi Chenghao, Michael Sebek, Giulia Menichetti (giulia.menichetti@channing.harvard.edu)
+
 ## Introduction
+
 The binding interactions between small molecules and proteins are the basis of cellular functions.
 Yet, experimental data available regarding compound-protein interaction (CPI) is not harmonized into a single
 entity but rather scattered across multiple institutions, each maintaining databases with different formats.
@@ -11,12 +13,16 @@ CPIExtract interactively extracts, filters and harmonizes CPI data from 9 databa
 The package provides two separate pipelines:
 - Comp2Prot: Extract protein target interactions for compounds provided as input
 - Prot2Comp: Extract compound interactions for proteins provided as input
+  
 ### Comp2Prot
+
 The pipeline extracts compound information from an input identifier using the [PubChem REST API](https://pubchempy.readthedocs.io/en/latest/), accessed with the [`PubChemPy`](https://github.com/mcs07/PubChemPy) Python package. Then, it uses the information to perform compound matching for each database, extracting raw interaction data. This data is then filtered for each database with a custom filter that ensures only high-quality interactions are returned in the output. Finally, proteins data are extracted using the [`Biomart`](https://github.com/sebriois/biomart) Python package, harmonizing the information from the 9 databases. The collected output is finally returned to the user in a `.csv` file. \
 An exemplative pipeline workflow is depicted in the figure below. An equivalent output network is also shown.
 
 ![Comp2Prot pipeline workflow example](/images/pipeline.png)
+
 ### Prot2Comp
+
 The pipeline follows a workflow similar to the other pipeline. It extracts protein information from an input identifier using the Biomart Python package. It performs the same database matching and filtering, and then harmonizes the interaction data extracting compounds information with the PubChemPy Python package. The output is finally returned to the user in a `.csv` file. 
 
 ## Getting started 
@@ -300,6 +306,7 @@ Comp2Prot accepts the following parameters:
 - `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
 
 The output will include all the interactions found and a dataframe containing the statements for all the datasets for the specific input compound.
+
 ```python
 # Chlorpromazine InChIKey
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
@@ -314,14 +321,15 @@ comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
 interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
 ```
+
 #### Prot2Comp
 
 Prot2Comp works similarly, with the exception that both functions only have the following additional parameters, as OTP will retrieve only known compounds interacting with the input protein:
 
-- `pChEMBL_thresh`: the minimum interaction pChEMBL value required to be added to the output file
-- `stitch_stereo`: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
-- `dtc_mutated`: to select whether also to consider interactions with mutated target proteins from DTC
-- `dc_extra`: to select whether to include possibly non-Homo sapiens interactions
+- `pChEMBL_thresh` - the minimum interaction pChEMBL value required to be added to the output file
+- `stitch_stereo` - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+- `dtc_mutated` - to select whether also to consider interactions with mutated target proteins from DTC
+- `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
   
 ```python
 # HGNC symbol for Kallikrein-1
@@ -332,8 +340,11 @@ interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
 interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False)
 ```
+
 ## Package Structure
+
 Root folder organization (```__init__.py``` files removed for simplicity):
+
 ```plaintext
 │   .gitignore
 │   environment.yml                                 // current conda env settings used
@@ -387,6 +398,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
         ├───helper.py                               // helper functions and classes
         └───identifiers.py                          // functions to extract identifiers for compounds and proteins
 ```
+
 ## Further information
 
 - Details about each function (what is it used for, what are the input parameters, the possible values of the input parameters, what is the output) from the pipeline are available in the `CPIExtract` folder, in the comments before each class function. 
