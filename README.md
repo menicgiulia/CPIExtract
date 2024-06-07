@@ -29,7 +29,46 @@ The pipeline follows a workflow similar to the other pipeline. It extracts prote
 
 ### Setting up a work environment
 
-#### I. Without installing the package
+#### I. With installing the package
+
+1. Installing the necessary dependencies:
+   
+   
+##### Option A: working with Conda
+
+Working with Conda is recommended, but it is not essential. If you choose to work with Conda, these are the steps you need to take:
+
+- Ensure you have Conda installed.
+
+- Download the `environment.yml` and navigate to the directory of your local/remote machine where the file is located.
+
+- Create a new conda environment with the `environment.yml` file:
+
+  ```bash
+  conda env create -f environment.yml
+  ```
+  
+- Activate your new conda environment:
+
+  ```bash
+  conda activate CPIExtract
+  ```
+  
+##### Option B: working without Conda
+
+- Ensure the following dependencies are installed before proceeding:
+
+  ```bash
+  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client 
+  ```
+
+2. Install the package:
+
+  ```bash
+  pip install CPIExtract
+  ```
+
+#### II. Without installing the package
 
 1. Ensure you have Python installed.
   
@@ -92,46 +131,6 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
     ```bash
     $env:PYTHONPATH = "C:\\user_path_to\\CPIExtract-main\\CPIExtract;" + $env:PYTHONPATH
     ```
-    
-      
-#### II. With installing the package
-
-1. Installing the necessary dependencies:
-   
-   
-##### Option A: working with Conda
-
-Working with Conda is recommended, but it is not essential. If you choose to work with Conda, these are the steps you need to take:
-
-- Ensure you have Conda installed.
-
-- Download the `environment.yml` and navigate to the directory of your local/remote machine where the file is located.
-
-- Create a new conda environment with the `environment.yml` file:
-
-  ```bash
-  conda env create -f environment.yml
-  ```
-  
-- Activate your new conda environment:
-
-  ```bash
-  conda activate CPIExtract
-  ```
-  
-##### Option B: working without Conda
-
-- Ensure the following dependencies are installed before proceeding:
-
-  ```bash
-  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client 
-  ```
-
-2. Install the package:
-
-  ```bash
-  pip install CPIExtract
-  ```
       
 #### Using Jupyter Notebooks
 
