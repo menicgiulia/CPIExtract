@@ -179,9 +179,7 @@ We provide several Jupyer Notebooks to simplify the databases' download and main
 
 ### Data Download
 
-To operate the package, and try the examples it is necessary to have downloaded databases `.csv` and `.tsv` files either in a local directory or stored in a mySQL server as tables. \
-The compressed preprocessed data necessary to reproduce the results in the manuscript are provided in subdirectory `data` - `Databases.zip`. \
-This data is intended for use with the [Local Execution mode](#local-execution). 
+To operate the package, and try the examples it is necessary to have downloaded databases `.csv` and `.tsv` files either in a local directory or stored in a mySQL server as tables. The compressed preprocessed data necessary to reproduce the results in the manuscript are provided in subdirectory `data` - `Databases.zip`. This data is intended for use with the [Local Execution mode](#local-execution). 
 
 Create a local folder, name it `data` and extract the files with the following code, which will save the databases in `data/Databases` subdirectory(Replace `/user_path_to/data/` with the appropriate path of the package in your local/remote machine):
 
