@@ -20,6 +20,13 @@ class Prot2Comp(Pipeline):
         }      
 
     # Calls functions to collect data and merges all the data from the various sources together
+    # The parameters are:
+    #    - input_id - the protein id
+    #    - pChEMBL_thresh - the minimum interaction pChEMBL value required to be added to the output file
+    #    - stitch_stereo - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+    #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
+    #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
+
     def prot_interactions(self, input_id, pChEMBL_thres=0, stitch_stereo=True, 
                           dtc_mutated=False, dc_extra=False):
 
@@ -31,6 +38,14 @@ class Prot2Comp(Pipeline):
             
 
     # Calls functions to collect data and merges all the data from the selected sources together
+    # The parameters are:
+    #    - input_id - the protein id
+    #    - selected_dbs - underscore-separated string containing the names of the databases which are selected
+    #    - pChEMBL_thresh - the minimum interaction pChEMBL value required to be added to the output file
+    #    - stitch_stereo - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+    #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
+    #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
+
     def prot_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
                                  pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False):
 
