@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     version='0.1.15',
-    name='CPIExtract',
+    name='cpiextract',
     author='Andrea Piras, Shi Chenghao, Michael Sebek, Giulia Menichetti',
     author_email='giulia.menichetti@channing.harvard.edu',
     description='CPIExtract is a software package to collect and harmonize small molecule and protein interactions.',
