@@ -20,7 +20,15 @@ class Comp2Prot(Pipeline):
         }       
 
 
-    # Calls functions to collect data and merges all the data from the various sources together
+    # Calls functions to collect data and merges all the data from the various sources together  
+    # The parameters are:
+    #    - input_id - the compound id
+    #    - pChEMBL_thresh - the minimum interaction pChEMBL value required to be added to the output file
+    #    - stitch_stereo - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+    #    - otp_biblio - to select whether to include the *bibliography* data from OTP. This parameter is only available for Comp2Prot as OTP provides only known drug interactions for proteins
+    #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
+    #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
+
     def comp_interactions(self, input_id, pChEMBL_thres=0, stitch_stereo=True, 
                           otp_biblio=False, dtc_mutated=False, dc_extra=False):
         
@@ -31,6 +39,15 @@ class Comp2Prot(Pipeline):
         return comp_tar, state
 
     # Calls functions to collect data and merges all the data from the selected sources together
+    # The parameters are:
+    #    - input_id - the compound id
+    #    - selected_dbs - underscore-separated string containing the names of the databases which are selected
+    #    - pChEMBL_thresh - the minimum interaction pChEMBL value required to be added to the output file
+    #    - stitch_stereo - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+    #    - otp_biblio - to select whether to include the *bibliography* data from OTP. This parameter is only available for Comp2Prot as OTP provides only known drug interactions for proteins
+    #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
+    #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
+
     def comp_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
                                  pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False):
         #pChEMBL_thres default 0: Will only interactions without activity data in sources with activity data present
