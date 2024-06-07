@@ -4,7 +4,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    version='0.1.1',
+    version='0.1.15',
     name='CPIExtract',
     author='Andrea Piras, Shi Chenghao, Michael Sebek, Giulia Menichetti',
     author_email='giulia.menichetti@channing.harvard.edu',
@@ -22,11 +22,11 @@ setuptools.setup(
     python_requires='>=3.7, <3.12',
     install_requires=[
         'numpy>=1.21.0,<2.0.0',
-        'pandas<=2.1.4',
-        'mysql-connector-python==8.3.0',
-        'biomart==0.9.2',
-        'chembl_webresource_client==0.10.8',
-        'pubchempy==1.0.4',
+        'pandas>=2.1.4',
+        'mysql-connector-python>=8.3.0',
+        'biomart>=0.9.2',
+        'chembl_webresource_client>=0.10.8',
+        'pubchempy>=1.0.4',
     ],
     extras_require={
         'interactive': ['jupyter'],
