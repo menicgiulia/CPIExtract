@@ -220,8 +220,7 @@ The pipelines can be instanciated in two ways:
 
 #### Local execution
 
-Load locally the databases when executing the pipeline. \
-To load the databases, follow the example notebook [Comp2Prot_example.ipynb](Comp2Prot_example.ipynb) at cell 2 (Load in Required Datasets).
+When running the pipeline locally, it is essential to load the databases first. To do this, please refer to the example notebook Comp2Prot_example.ipynb and follow the instructions in cell `[2]: Load in Required Datasets`.
 
 ```python 
 from CPIExtract import Comp2Prot, Prot2Comp
