@@ -112,24 +112,24 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
   pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client
   ```
           
-5. Set up your PYTHONPATH (Replace `/user_path_to/CPIExtract-main/CPIExtract` with the appropriate path of the package in your local/remote machine.):
+5. Set up your PYTHONPATH (Replace `/user_path_to/CPIExtract-main/cpiextract` with the appropriate path of the package in your local/remote machine.):
 
     _On Linux/Mac_:
    
    ```bash
-   export PYTHONPATH="/user_path_to/CPIExtract-main/CPIExtract":$PYTHONPATH
+   export PYTHONPATH="/user_path_to/CPIExtract-main/cpiextract":$PYTHONPATH
    ```
       
     _On Windows shell_:
 
     ```bash
-    set PYTHONPATH="C:\\user_path_to\\CPIExtract-main\\CPIExtract";%PYTHONPATH%
+    set PYTHONPATH="C:\\user_path_to\\CPIExtract-main\\cpiextract";%PYTHONPATH%
     ```
       
     _On Powershell_:
 
     ```bash
-    $env:PYTHONPATH = "C:\\user_path_to\\CPIExtract-main\\CPIExtract;" + $env:PYTHONPATH
+    $env:PYTHONPATH = "C:\\user_path_to\\CPIExtract-main\\cpiextract;" + $env:PYTHONPATH
     ```
       
 #### Using Jupyter Notebooks
@@ -227,7 +227,7 @@ When running the pipeline locally, it is essential to load the databases first. 
 Before loading the data make sure you are in the parent directory of `data` or adjust `data_path` according to your setup.
 
 ```python 
-from CPIExtract import Comp2Prot, Prot2Comp
+from cpiextract import Comp2Prot, Prot2Comp
 import pandas as pd
 import os
 
@@ -281,7 +281,7 @@ P2C = Prot2Comp(execution_mode='local', dbs=data)
 The databases are stored on the mySQL server. 
 
 ```python
-from CPIExtract import Comp2Prot, Prot2Comp
+from cpiextract import Comp2Prot, Prot2Comp
 
 # Exmeplative dictionary containing the configuration info to connect to the mySQL server
 info = {
@@ -369,7 +369,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 │       ├───C2P.csv                                 // Comp2Prot output file for db_compounds.csv
 │       └───P2C.csv                                 // Prot2Comp output file for db_proteins.csv
 │
-└───CPIExtract
+└───cpiextract
     │   
     ├───data_manager                                
     │   ├───APIManager.py                           // to extract raw data from databases' APIs
@@ -409,7 +409,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 
 ## Further information
 
-- Details about each function (what is it used for, what are the input parameters, the possible values of the input parameters, what is the output) from the pipeline are available in the `CPIExtract` folder, in the comments before each class function. 
+- Details about each function (what is it used for, what are the input parameters, the possible values of the input parameters, what is the output) from the pipeline are available in the `cpiextract` folder, in the comments before each class function. 
 - An example of the use of the implemented functions is available in the jupyter notebooks [Comp2Prot_example.ipynb](Comp2Prot_example.ipynb) and [Prot2Comp_example.ipynb](Prot2Comp_example.ipynb), which can be executed to test the proper installation of the package and it's functionalities.
 
 ## License
