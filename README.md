@@ -154,13 +154,26 @@ To operate the package, it is necessary to have downloaded databases `.csv` and 
 We provide the compressed preprocessed data used to obtain the results reported in the paper in the data folder. \
 This data is to be used with the [Local Execution mode](#local-execution). 
 
-Extract the files with the following code:
-```bash
-# replace root path with appropriate location (e.g., /home/username/)
-cd root/path/CPIExtract/data/
-# unzip file
-unzip Databases.zip
-```
+Extract the files with the following code, which will save the databases in the `data/Databases` folder (Replace `root/path` with the appropriate path of the package in your local/remote machine):
+
+  _On Linux/Mac_:
+   
+  ```bash
+      cd root/path/CPIExtract/data/
+      mkdir -p Databases
+      unzip Databases.zip -d Databases/
+  ```
+      
+  _On Windows shell/Powershell_:
+
+  ```bash
+      cd root\\path\\CPIExtract\\data
+      mkdir Databases
+      tar -xf Databases.zip -C Databases\\
+  ```
+
+
+
 #### Data Update
 Although the data used is up to date, each database periodically releases updated versions that will make the zipped data obsolete. 
 For this reason, we suggest periodically redownloading the databases in order to have the latest CPI information available.
@@ -294,12 +307,17 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 │   .gitignore
 │   environment.yml                                 // current conda env settings used
 │   README.md
-│   CPE_testing.ipynb                               // CPE pipeline testing notebook
-│   PCE_testing.ipynb                               // PCE pipeline testing notebook
+│   Comp2Prot_example.ipynb                         // Comp2Prot pipeline testing notebook
+│   Prot2Comp_example.ipynb                         // Prot2Comp pipeline testing notebook
 │
-├───data                                            // database storage location
-├───dbs_config.json                                 // file with databases configuration for the mySQL server
-│   └───input                                       // pipeline input data location
+├───data                                            // data storage location
+│   ├───dbs_config.json                             // file with databases configuration for the mySQL server
+│   ├───input                                       // pipeline input data location
+│   │   ├───db_compounds.csv                        // DrugBank compounds example dataset
+│   │   └───db_proteins.csv                         // DrugBank protein example dataset
+│   └───output                                      // pipeline output data location
+│       ├───C2P.csv                                 // Comp2Prot output file for db_compounds.csv
+│       └───P2C.csv                                 // Prot2Comp output file for db_proteins.csv
 │
 └───CPIExtract
     │   
@@ -322,9 +340,9 @@ Root folder organization (```__init__.py``` files removed for simplicity):
     │   └───Stitch.py                               // STITCH database class
     │
     ├───pipelines                                  
-    │   ├───CompProtExtract.py                      // CPE pipeline class
+    │   ├───Comp2Prot.py                            // Comp2Prot pipeline class
     │   ├───Pipeline                                // Abstract pipeline class
-    │   └───ProtCompExtract.py                      // PCE pipeline class
+    │   └───Prot2Comp.py                            // Prot2Comp pipeline class
     │
     ├───servers                                     
     │   ├───BiomartServer.py                        // to connect to Biomart API
@@ -332,7 +350,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
     │   └───PubChemServer.py                        // to connect to PubChem API
     │
     ├───sql_server  
-    │   └───sql_conncetion.py                       // to connect to the SQL server
+    │   └───sql_connection.py                       // to connect to the SQL server
     │
     └───utils                                        
         ├───helper.py                               // helper functions and classes
