@@ -19,7 +19,7 @@ The package provides two separate pipelines:
 The pipeline extracts compound information from an input identifier using the [PubChem REST API](https://pubchempy.readthedocs.io/en/latest/), accessed with the [`PubChemPy`](https://github.com/mcs07/PubChemPy) Python package. Then, it uses the information to perform compound matching for each database, extracting raw interaction data. This data is then filtered for each database with a custom filter, ensuring only high-quality interactions are returned in the output. Finally, protein data are extracted using the [`Biomart`](https://github.com/sebriois/biomart) Python package, harmonizing the information from the 9 databases. The collected output is finally returned to the user in a `.csv` file. \
 An exemplary pipeline workflow is depicted in the figure below. An equivalent output network is also shown.
 
-![Comp2Prot pipeline workflow example](https://raw.githubusercontent.com/menicgiulia/CPIExtract/blob/main/images/pipeline.png)
+![Comp2Prot pipeline workflow example](https://raw.githubusercontent.com/menicgiulia/CPIExtract/main/images/pipeline.png)
 
 
 ### Prot2Comp
