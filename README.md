@@ -179,16 +179,16 @@ We provide several Jupyer Notebooks to simplify the databases' download and main
 
 ### Data Download
 
-To operate the package, and try the examples it is necessary to have downloaded databases `.csv` and `.tsv` files either in a data folder or stored in a mySQL server as tables. \
-We provide the compressed preprocessed data used to obtain the results reported in the paper in the data folder. \
-This data is to be used with the [Local Execution mode](#local-execution). 
+To operate the package, and try the examples it is necessary to have downloaded databases `.csv` and `.tsv` files either in a local directory or stored in a mySQL server as tables. \
+The compressed preprocessed data necessary to reproduce the results in the manuscript are provided in subdirectory `data` - `Databases.zip`. \
+This data is intended for use with the [Local Execution mode](#local-execution). 
 
-Extract the files with the following code, which will save the databases in the `data/Databases` folder (Replace ``/user_path_to/CPIExtract-main/CPIExtract`` with the appropriate path of the package in your local/remote machine):
+Create a local folder, name it `data` and extract the files with the following code, which will save the databases in `data/Databases` subdirectory(Replace `/user_path_to/data/` with the appropriate path of the package in your local/remote machine):
 
   _On Linux/Mac_:
    
   ```bash
-  cd root/path/CPIExtract/data/
+  cd /user_path_to/data/
   mkdir -p Databases
   unzip Databases.zip -d Databases/
   ```
@@ -196,12 +196,10 @@ Extract the files with the following code, which will save the databases in the 
   _On Windows shell/Powershell_:
 
   ```bash
-  cd root\\path\\CPIExtract\\data
+  cd user_path_to\\data
   mkdir Databases
   tar -xf Databases.zip -C Databases\\
   ```
-
-
 
 #### Data Update
 
@@ -229,6 +227,7 @@ The package is designed to support multiple user scenarios based on different st
 ##### Option A: Local execution
 
 When running the pipeline locally, it is essential to load the databases first. To do this, please refer to the example jupyter notebook `Comp2Prot_example.ipynb` and follow the instructions in cell `[2]: Load in Required Datasets`.
+Before loading the data make sure you are in the parent directory of `data` or adjust `data_path` according to your setup.
 
 ```python 
 from CPIExtract import Comp2Prot, Prot2Comp
@@ -236,7 +235,7 @@ import pandas as pd
 import os
 
 # Root data path
-data_path = 'data'
+data_path = 'data/Databases/'
 
 #Downloaded from BindingDB on 3/30/2023
 file_path=os.path.join(data_path, 'BindingDB.csv')
