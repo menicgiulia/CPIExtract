@@ -32,39 +32,6 @@ The pipeline follows a workflow similar to the other pipeline. It extracts prote
 
 #### I. With installing the package
 
-1. Installing the necessary dependencies:
-   
-   
-##### Option A: working with Conda
-
-Working with Conda is recommended, but it is not essential. If you choose to work with Conda, these are the steps you need to take:
-
-- Ensure you have Conda installed.
-
-- Download the `environment.yml` and navigate to the directory of your local/remote machine where the file is located.
-
-- Create a new conda environment with the `environment.yml` file:
-
-  ```bash
-  conda env create -f environment.yml
-  ```
-  
-- Activate your new conda environment:
-
-  ```bash
-  conda activate CPIExtract
-  ```
-  
-##### Option B: working without Conda
-
-- Ensure the following dependencies are installed before proceeding:
-
-  ```bash
-  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client 
-  ```
-
-2. Install the package:
-
   ```bash
   pip install cpiextract
   ```
