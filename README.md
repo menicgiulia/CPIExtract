@@ -18,6 +18,7 @@ An exemplative pipeline workflow is depicted in the figure below. An equivalent 
 ![Comp2Prot pipeline workflow example](/images/pipeline.png)
 ### Prot2Comp
 The pipeline follows a workflow similar to the other pipeline. It extracts protein information from an input identifier using the Biomart Python package. It performs the same database matching and filtering, and then harmonizes the interaction data extracting compounds information with the PubChemPy Python package. The output is finally returned to the user in a `.csv` file. 
+
 ## Getting started 
 
 ### Setting up a work environment
@@ -28,14 +29,14 @@ The pipeline follows a workflow similar to the other pipeline. It extracts prote
   
 2. Copy the project to your local or remote machine:
 
-   ```bash
-      git clone https://github.com/menicgiulia/CPIExtract.git
-   ```
+  ```bash
+  git clone https://github.com/menicgiulia/CPIExtract.git
+  ```
 3. Navigate to the project directory:
 
-   ```bash
-      cd CPIExtract-main
-   ```
+  ```bash
+  cd CPIExtract-main
+  ```
 
 4. Installing the necessary dependencies:
    
@@ -48,36 +49,42 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 
 - Create a new conda environment with the `environment.yml` file:
 
-      conda env create -f environment.yml
+  ```bash
+  conda env create -f environment.yml
+  ```
 
 - Activate your new conda environment:
 
-      conda activate CPIExtract
+  ```bash
+  conda activate CPIExtract
+  ```
   
 ##### Option B: working without Conda
 
 - Ensure the following dependencies are installed before proceeding:
 
-      pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client  
-            
-5. Set up your PYTHONPATH (Replace `/user_path_to/CPIExtract/CPIExtract` with the appropriate path of the package in your local/remote machine.):
+  ```bash
+  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client
+  ```
+          
+5. Set up your PYTHONPATH (Replace `/user_path_to/CPIExtract-main/CPIExtract` with the appropriate path of the package in your local/remote machine.):
 
     _On Linux/Mac_:
    
-      ```bash
-      export PYTHONPATH="/user_path_to/CPIExtract/CPIExtract":$PYTHONPATH
-      ```
+   ```bash
+   export PYTHONPATH="/user_path_to/CPIExtract-main/CPIExtract":$PYTHONPATH
+   ```
       
     _On Windows shell_:
 
     ```bash
-      set PYTHONPATH="C:\\user_path_to\\CPIExtract\\CPIExtract";%PYTHONPATH%
+    set PYTHONPATH="C:\\user_path_to\\CPIExtract-main\\CPIExtract";%PYTHONPATH%
     ```
       
     _On Powershell_:
 
     ```bash
-      $env:PYTHONPATH = "C:\\user_path_to\\CPIExtract\\CPIExtract;" + $env:PYTHONPATH
+    $env:PYTHONPATH = "C:\\user_path_to\\CPIExtract-main\\CPIExtract;" + $env:PYTHONPATH
     ```
     
       
@@ -92,44 +99,52 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 
 - Ensure you have Conda installed.
 
-- Download the environment.yml and navigate to the directory of your local/remote machine where the file is located.
+- Download the `environment.yml` and navigate to the directory of your local/remote machine where the file is located.
 
 - Create a new conda environment with the `environment.yml` file:
 
-      conda env create -f environment.yml
-
+  ```bash
+  conda env create -f environment.yml
+  ```
+  
 - Activate your new conda environment:
 
-      conda activate CPIExtract
+  ```bash
+  conda activate CPIExtract
+  ```
   
 ##### Option B: working without Conda
 
 - Ensure the following dependencies are installed before proceeding:
 
-      pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client 
+  ```bash
+  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client 
+  ```
 
 2. Install the package:
 
-      ```bash
-      pip install CPIExtract
-      ```
+  ```bash
+  pip install CPIExtract
+  ```
+      
 #### Using Jupyter Notebooks
+
 We provide several Jupyer Notebooks to simplify the databases download and mantenaince. In order to use these notebooks, follow these steps:
-- Make sure you have the `Jupyter` package installed.
+- Make sure you have the `jupyter` package installed.
 
   ```bash
-      pip install jupyter
+  pip install jupyter
   ```
   
 - Start the Jupyter Kernel
 
     a) If you are working on a local machine:
-  
-    ```bash
-      jupyter notebook --browser="browser_of_choice"
-    ```
+
+  ```bash
+  jupyter notebook --browser="browser_of_choice"
+  ```
     
-  Replace browser_of_choice with your preferred browser (e.g., chrome, firefox). The browser window should pop up automatically. If it doesn't, copy and paste the link provided in the terminal into your browser. The link should look something like this:
+  Replace browser_of_choice with your preferred browser (e.g., chrome, firefox). The browser window should pop up automatically. If it doesn't, copy and paste the link provided in the       terminal into your browser. The link should look something like this:
 
     
    * http://localhost:8889/tree?token=5d4ebdddaf6cb1be76fd95c4dde891f24fd941da909129e6
@@ -138,10 +153,10 @@ We provide several Jupyer Notebooks to simplify the databases download and mante
     b) If you are working on a remote machine:
   
     ```bash
-      jupyter notebook --no-browser
+    jupyter notebook --no-browser
     ```
     
-  Then copy and paste the link provided in the terminal in your local browser of choice; it should look something like this:
+  Then copy and paste the link provided in the terminal in your local browser of choice, it should look something like this:
 
     
    * http://localhost:8888/?token=9feac8ff1d5ba3a86cf8c4309f4988e7db95f42d28fd7772
@@ -150,6 +165,7 @@ We provide several Jupyer Notebooks to simplify the databases download and mante
 - Navigate to the selected notebook in the Jupyter Notebook interface and start executing the cells.
 
 ### Data Download
+
 To operate the package, it is necessary to have downloaded databases `.csv` and `.tsv` files either in a data folder or stored in a mySQL server as tables. \
 We provide the compressed preprocessed data used to obtain the results reported in the paper in the data folder. \
 This data is to be used with the [Local Execution mode](#local-execution). 
@@ -159,28 +175,30 @@ Extract the files with the following code, which will save the databases in the 
   _On Linux/Mac_:
    
   ```bash
-      cd root/path/CPIExtract/data/
-      mkdir -p Databases
-      unzip Databases.zip -d Databases/
+  cd root/path/CPIExtract/data/
+  mkdir -p Databases
+  unzip Databases.zip -d Databases/
   ```
       
   _On Windows shell/Powershell_:
 
   ```bash
-      cd root\\path\\CPIExtract\\data
-      mkdir Databases
-      tar -xf Databases.zip -C Databases\\
+  cd root\\path\\CPIExtract\\data
+  mkdir Databases
+  tar -xf Databases.zip -C Databases\\
   ```
 
 
 
 #### Data Update
+
 Although the data used is up to date, each database periodically releases updated versions that will make the zipped data obsolete. 
 For this reason, we suggest periodically redownloading the databases in order to have the latest CPI information available.
 We also strongly recommend preprocessing the databases to obtain significantly faster pipelines execution times. \
 To ease this process, we provide two notebooks to download ([db_download.ipynb](db_download.ipynb)) and preprocess ([db_preprocessing.ipynb](db_preprocessing.ipynb)) the databases.
 
 ### SQL Server
+
 Users can also load the databases into a mySQL server. \
 1. We suggest using [mySQL Workbench CE](https://dev.mysql.com/downloads/workbench/). Once setup, create a database schema named `cpie`.
 2. (If the package has been installed with pip) \
@@ -188,12 +206,17 @@ Download the [`dbs_config.json`](data/dbs_config.json) and save it into the data
 3. Load the **downloaded and preprocessed** databases as tables into the SQL database, which can be done using the provided [SQL_load.ipynb](SQL_load.ipynb) notebook.
 
 ## Example execution
+
 ### Pipelines instantiation
+
 The package provides two classes, one for each pipeline: Comp2Prot and Prot2Comp. 
 The pipelines can be instanciated in two ways:
+
 #### Local execution
+
 Load locally the databases when executing the pipeline. \
 To load the databases, follow the example notebook [Comp2Prot_example.ipynb](Comp2Prot_example.ipynb) at cell 2 (Load in Required Datasets).
+
 ```python 
 from CPIExtract import Comp2Prot, Prot2Comp
 import pandas as pd
@@ -243,7 +266,9 @@ data = {
 C2P = Comp2Prot(execution_mode='local', dbs=data)
 P2C = Prot2Comp(execution_mode='local', dbs=data)
 ```
+
 #### Server execution
+
 The databases are stored on the mySQL server. 
 
 ```python
@@ -261,15 +286,18 @@ C2P = Comp2Prot(execution_mode='server', server_info=info)
 P2C = Prot2Comp(execution_mode='server', server_info=info)
 ```
 ### How to run the pipelines
+
 Once instantiated, to run the pipelines call either `comp_interactions` or `comp_interactions_select` for Comp2Prot, and either `prot_interactions` or `prot_interactions_select` for Prot2Comp. 
+
 #### Comp2Prot
+
 Comp2Prot accepts the following parameters:
-- input_id: the compound id
-- pChEMBL_thresh: the minimum interaction pChEMBL value required to be added to the output file
-- stitch_stereo: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
-- otp_biblio: to select whether to include the *bibliography* data from OTP. This parameter is only available for Comp2Prot as OTP provides only known drug interactions for proteins
-- dtc_mutated: to select whether also to consider interactions with mutated target proteins from DTC
-- dc_extra: to select whether to include possibly non-Homo sapiens interactions
+- `input_id` - the compound id
+- `pChEMBL_thresh` - the minimum interaction pChEMBL value required to be added to the output file
+- `stitch_stereo` - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+- `otp_biblio` - to select whether to include the *bibliography* data from OTP. This parameter is only available for Comp2Prot as OTP provides only known drug interactions for proteins
+- `dtc_mutated` - to select whether also to consider interactions with mutated target proteins from DTC
+- `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
 
 The output will include all the interactions found and a dataframe containing the statements for all the datasets for the specific input compound.
 ```python
@@ -287,11 +315,14 @@ comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
 ```
 #### Prot2Comp
+
 Prot2Comp works similarly, with the exception that both functions only have the following additional parameters, as OTP will retrieve only known compounds interacting with the input protein:
-- pChEMBL_thresh: the minimum interaction pChEMBL value required to be added to the output file
-- stitch_stereo: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
-- dtc_mutated: to select whether also to consider interactions with mutated target proteins from DTC
-- dc_extra: to select whether to include possibly non-Homo sapiens interactions
+
+- `pChEMBL_thresh`: the minimum interaction pChEMBL value required to be added to the output file
+- `stitch_stereo`: to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+- `dtc_mutated`: to select whether also to consider interactions with mutated target proteins from DTC
+- `dc_extra`: to select whether to include possibly non-Homo sapiens interactions
+  
 ```python
 # HGNC symbol for Kallikrein-1
 prot_id = 'KLK1'
