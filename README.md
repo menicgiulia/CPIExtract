@@ -65,7 +65,7 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 2. Install the package:
 
   ```bash
-  pip install CPIExtract
+  pip install cpiextract
   ```
 
 #### II. Without installing the package
