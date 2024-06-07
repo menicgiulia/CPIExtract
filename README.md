@@ -60,7 +60,7 @@ Working with Conda is recommended, but it is not essential. If you choose to wor
 - Ensure the following dependencies are installed before proceeding:
 
   ```bash
-  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client 
+  pip install numpy pandas mysql-connector-python biomart pubchempy chembl-webresource-client tqdm
   ```
 
 2. Install the package:
