@@ -17,6 +17,7 @@ class Prot2Comp(Pipeline):
             'otp': (),
             'dc': (dc_extra, pChEMBL_thres,),
             'db': (),
+            'pdb': (pChEMBL_thres,)
         }      
 
     # Calls functions to collect data and merges all the data from the various sources together
@@ -46,7 +47,7 @@ class Prot2Comp(Pipeline):
     #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
     #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
 
-    def prot_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
+    def prot_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db_pdb', 
                                  pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False):
 
         self._update_args(pChEMBL_thres, stitch_stereo, dtc_mutated, dc_extra)
@@ -95,7 +96,7 @@ class Prot2Comp(Pipeline):
                 prot_comp = prot_comp[['input_id', 'entrez', 'gene_type', 'hgnc_symbol', 'description',
                                     'inchi', 'inchikey', 'isomeric_smiles', 'iupac_name', 'pchembl_count',
                                     'ave_pchembl', 'std_pchembl', 'src_count', 'pubchem', 'chembl', 'bindingdb', 'stitch',
-                                    'ctd', 'dtc', 'otp', 'drugcentral', 'drugbank']]
+                                    'ctd', 'dtc', 'otp', 'drugcentral', 'drugbank', 'pdbbind']]
 
         return prot_comp, states
             

@@ -8,5 +8,6 @@ from .DTC import DTC
 from .OTP import OTP
 from .PubChem import PubChem
 from .Stitch import Stitch
+from .PDBbind import PDBbind
 
-__all__ = ['BindingDB', 'ChEMBL', 'CTD', 'Database', 'DB', 'DrugCentral', 'DTC', 'OTP', 'PubChem', 'Stitch']
+__all__ = ['BindingDB', 'ChEMBL', 'CTD', 'Database', 'DB', 'DrugCentral', 'DTC', 'OTP', 'PubChem', 'PDBbind', 'Stitch']

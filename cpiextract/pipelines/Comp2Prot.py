@@ -17,6 +17,7 @@ class Comp2Prot(Pipeline):
             'otp': (chembl_ids, otp_biblio,),
             'dc': (dc_extra, pChEMBL_thres,),
             'db': (),
+            'pdb': (pChEMBL_thres,),
         }       
 
 
@@ -48,7 +49,7 @@ class Comp2Prot(Pipeline):
     #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
     #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
 
-    def comp_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
+    def comp_interactions_select(self, input_id, selected_dbs='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db_pdb', 
                                  pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False):
         #pChEMBL_thres default 0: Will only interactions without activity data in sources with activity data present
         #stitch_stereo default True: True=stereo specific False=non-specific stereochemistry (True ensures exact match to input_id)
@@ -100,7 +101,7 @@ class Comp2Prot(Pipeline):
                                     'entrez', 'gene_type', 'hgnc_symbol', 'description',
                                     'pchembl_count', 'ave_pchembl', 'std_pchembl', 'src_count', 'pubchem',
                                     'chembl', 'bindingdb', 'stitch', 'ctd', 'dtc', 'otp', 'drugcentral',
-                                    'drugbank']]
+                                    'drugbank', 'pdbbind']]
 
         return comp_tar, states
     

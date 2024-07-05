@@ -58,12 +58,13 @@ class Pipeline(ABC):
             'dtc': DTC(database=dbs.get('dtc', None), connection=self.cnx),
             'otp': OTP(),
             'dc': DrugCentral(database=dbs.get('dc', None), connection=self.cnx),
-            'db': DB(database=dbs.get('db', None), connection=self.cnx)
+            'db': DB(database=dbs.get('db', None), connection=self.cnx),
+            'pdb': PDBbind(database=dbs.get('pdb', None), connection=self.cnx)
         }
 
         self.database_args = {}
 
-        self.sources = ['PubChem', 'ChEMBL', 'BindingDB', 'Stitch', 'CTD', 'DTC', 'OTP', 'DrugCentral', 'DrugBank']
+        self.sources = ['PubChem', 'ChEMBL', 'BindingDB', 'Stitch', 'CTD', 'DTC', 'OTP', 'DrugCentral', 'DrugBank', 'PDBbind']
 
 
     def _aggregate_pchembl(self, data: pd.DataFrame, index, comp: pd.DataFrame):

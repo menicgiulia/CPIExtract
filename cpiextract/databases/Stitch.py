@@ -35,8 +35,6 @@ class Stitch(Database):
         
         Parameters
         ----------
-        DTC_data : DataFrame
-            Dataframe containing all DTC database info
         input_comp : DataFrame
             Dataframe of input compounds from which interacting proteins are found
         set_stereo : bool
@@ -169,8 +167,6 @@ class Stitch(Database):
         ----------
         input_protein : DataFrame
             Dataframe of input proteins from which interacting compound are found
-        stitch_data : DataFrame
-            Dataframe containing all stitch database info        
         set_stereo : bool
             value to determine which kind of stereochemistry to consider for the input compound:
             - True (default) - specific stereochemistry
