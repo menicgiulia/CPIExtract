@@ -1,13 +1,18 @@
+'''Loading,searching,filtering and preprocessing data from CTD.'''
+
 import pandas as pd
 import numpy as np
+
+from ..utils.typing import Connection
 from ..servers.PubchemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
 from .Database import Database
 from ..data_manager import *
 
 class CTD(Database):
+    '''Loading,searching,filtering and preprocessing data from CTD.'''
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None):
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -15,7 +20,7 @@ class CTD(Database):
         else:
             self.data_manager = SQLManager(connection, 'CTD')
 
-    def _filter_database(self, CTD_raw: pd.DataFrame):
+    def _filter_database(self, CTD_raw: pd.DataFrame) -> pd.DataFrame:
                         # Filter to Homo Sapiens only
         CTD_act = CTD_raw.loc[(CTD_raw['OrganismID'] == 9606) &
                             # Only select ligand-protein binding
@@ -24,7 +29,7 @@ class CTD(Database):
                             (CTD_raw['GeneForms']==('protein'))].drop_duplicates().reset_index(drop=True)
         return CTD_act
 
-    def interactions(self, input_comp: pd.DataFrame):
+    def interactions(self, input_comp: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from CTD database interacting with compound passed as input.
 
@@ -122,7 +127,7 @@ class CTD(Database):
         return CTD_act, statement, CTD_raw
     
     
-    def compounds(self, input_protein: pd.DataFrame):
+    def compounds(self, input_protein: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from CTD database interacting with proteins passed as input.
 

@@ -1,5 +1,9 @@
+'''Loading,searching,filtering and preprocessing data from DTC.'''
+
 import pandas as pd
 import numpy as np
+
+from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..servers.PubchemServer import PubChemServer
@@ -9,7 +13,7 @@ from ..data_manager import *
 
 class DTC(Database):
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None):
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -18,7 +22,7 @@ class DTC(Database):
             self.data_manager = SQLManager(connection, 'DTC')
 
 
-    def _filter_database(self, DTC_raw: pd.DataFrame):
+    def _filter_database(self, DTC_raw: pd.DataFrame) -> pd.DataFrame:
         # Filter DTC_data to measurements and units for calculation of pChEMBL
         valid_standard_types = ['IC50','KI','EC50','KD','Kd','ED50','XC50','AC50','Ki','ED50','CC50','AVERAGEIC50',
                             'ACTIVITYEC50','SC50','AD50','DC50','XI50','GC50','GI50','LOGEC50','-LOGIC50','PIC50',
@@ -44,7 +48,7 @@ class DTC(Database):
         return DTC_filt
         
 
-    def _standardize_database(self, DTC_raw: pd.DataFrame, dtc_mutated: bool, pChEMBL_thres: float):
+    def _standardize_database(self, DTC_raw: pd.DataFrame, dtc_mutated: bool, pChEMBL_thres: float) -> pd.DataFrame:
 
                     # Only use interactions with reported sources
         DTC_act = DTC_raw[(DTC_raw['doc_type'].notnull()) & 
@@ -72,7 +76,7 @@ class DTC(Database):
         return DTC_act
             
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, pChEMBL_thres: float=0):
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from DTC database interacting with compound passed as input.
 
@@ -182,7 +186,7 @@ class DTC(Database):
         return DTC_act, statement, DTC_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from DTC database interacting with proteins passed as input.
 
@@ -279,7 +283,7 @@ class DTC(Database):
         return DTC_c1, statement, DTC_raw
 
 
-    def _standard_converter(self, DTC_act: pd.DataFrame):
+    def _standard_converter(self, DTC_act: pd.DataFrame) -> pd.DataFrame:
         """
         Converts all types from DTC database to those needed for pCHEMBL by storing the respective
         standardized value. Also converts all units to nM as it is required to compute pCHEMBL.

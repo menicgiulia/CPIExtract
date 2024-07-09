@@ -1,11 +1,30 @@
+'''The server to perform ChEMBL requests.'''
+
 import time
 from chembl_webresource_client.new_client import new_client
 import pandas as pd
 
 class ChEMBLServer(object):
-    
+    '''The server to perform ChEMBL requests.'''
+
     @staticmethod
-    def identify_chembl_ids(compound: pd.DataFrame, pubchem_ids=True):
+    def identify_chembl_ids(compound: pd.DataFrame, pubchem_ids: bool = True) -> list[str | None]:
+        '''Return all the chembl ids of synonyms for the compound.
+        
+        Parameters
+        ----------
+        compound: DataFrame
+            Compound table containing synonyms information.
+        pubchem_ids: bool
+            Seach compounds if ChEMBL ids are available from PubChem.
+
+        Returns
+        -------
+        list[None]
+            When no synonyms found.
+        list[str]
+            A list of chembil ids of synonyms.
+        '''
         chembl_total = []
         if pubchem_ids:
             # Search for all the chembl ids for the compound
@@ -36,7 +55,7 @@ class ChEMBLServer(object):
                     except:
                         # API not working, wait 5 seconds
                         time.sleep(5)
-            chembl_total = chemblEx + chemblSyn
+            chembl_total = chemblEx.extend(chemblSyn)
             
         # If search is with ChEMBL or PubChem search was not successful 
         if not pubchem_ids or (chembl_total == [] and pubchem_ids):  
@@ -78,7 +97,8 @@ class ChEMBLServer(object):
             return [None]
 
     @staticmethod
-    def molecule_search(ids, inchi, chembl_id):
+    def molecule_search(ids: list[str], inchi: list[str], chembl_id: list[str]) -> None:
+        '''Search molecules of specific ids on ChEMBL and update inchi/chembl_id list.'''
 
         attempts = 0
         max_attempts = 10

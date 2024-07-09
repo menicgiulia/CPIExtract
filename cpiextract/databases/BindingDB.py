@@ -1,15 +1,20 @@
+'''Loading,searching,filtering and preprocessing data from BindingDB.'''
+
 import numpy as np
 import pandas as pd
 import re
+
 from ..servers.BiomartServer import BiomartServer
 from ..servers.PubchemServer import PubChemServer
 from .Database import Database
 from ..data_manager import *
+from ..utils.typing import Connection
 import time
 
 class BindingDB(Database):
+    '''Loading,searching,filtering and preprocessing data from BindingDB.'''
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection: Connection|None=None, database:pd.DataFrame|None=None):
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -17,7 +22,7 @@ class BindingDB(Database):
         else:
             self.data_manager = SQLManager(connection, 'BDB')
 
-    def _filter_database(self, bdb_raw: pd.DataFrame):
+    def _filter_database(self, bdb_raw: pd.DataFrame) -> pd.DataFrame:
         """
         Filters the bdb database with the following constraints:
             - Only Homo Sapiens interactions
@@ -47,7 +52,7 @@ class BindingDB(Database):
                                 .drop_duplicates(ignore_index=True)
         return bdb_filt
 
-    def _compute_pchembl(self, bdb_dat: pd.DataFrame, pChEMBL_thres: float):
+    def _compute_pchembl(self, bdb_dat: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
         """
         Computes the pchembl value for each non-null activity columns
         - Ki (nM)
@@ -101,7 +106,7 @@ class BindingDB(Database):
                 
 
 
-    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0):
+    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from bdb database interacting with compound passed as input.
 
@@ -118,8 +123,6 @@ class BindingDB(Database):
         
         Parameters
         ----------
-        BDB_data : DataFrame
-            Dataframe containing all bdb database info
         input_comp : dictionary
             dictionary of input compound data from which interacting proteins are found
         pChEMBL_thres : float
@@ -195,7 +198,7 @@ class BindingDB(Database):
         return bdb_act, statement, bdb_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from bdb database interacting with proteins passed as input.
 
@@ -214,14 +217,18 @@ class BindingDB(Database):
         ----------
         input_protein : DataFrame
             Dataframe of input proteins from which interacting compound are found
-        BDB_data : DataFrame
-            Dataframe containing all bdb database info
+        pChEMBL_thres : float
+            minimum pChEMBL value necessary for interaction to be considered valid
 
         Returns
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
             inchi, inchikey, isomeric_smiles, iupac_name, datasource (BindingDB), pchembl_value, notes (activity type)
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all BindingDB info about the protein
         """
 
         columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']

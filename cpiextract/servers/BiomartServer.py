@@ -1,15 +1,18 @@
+'''The server to perform Biomart requests.'''
+
 import biomart
 import pandas as pd
 import io
 from ..utils.helper import *
 
 class BiomartServer(metaclass=Singleton):
+    '''The server to perform Biomart requests.'''
 
     def __init__(self) -> None:
         self.mirrors = ['useast', 'www', 'asia']
         self._connect_to_biomart()
     
-    def _connect_to_biomart(self):
+    def _connect_to_biomart(self) -> None:
         for mirror in self.mirrors:
             try:
                 self.server = biomart.BiomartServer(f"http://{mirror}.ensembl.org/biomart")
@@ -19,8 +22,8 @@ class BiomartServer(metaclass=Singleton):
                 continue
         raise ConnectionError('Couldn\'t connect to biomart')
 
-    def search(self, input_type, input_id, attributes, column_names):
-        
+    def search(self, input_type: str, input_id: list[int | str] | str | int, attributes: list[str], column_names: list[str]) -> pd.DataFrame:
+        '''Search and filter input ids on Biomart.'''
         try:
             bm = self.dataset.search({
             'filters': {
@@ -36,8 +39,8 @@ class BiomartServer(metaclass=Singleton):
         return targets
     
 
-    def subset_search(self, input_type, input_ids, attributes, column_names):
-
+    def subset_search(self, input_type: str, input_ids: list[int | str], attributes: list[str], column_names: list[str]) -> pd.DataFrame:
+        '''Search and filter input ids on Biomart by batch mode.'''
         targets = pd.DataFrame(columns=column_names)
         if len(input_ids) > 250:
             for start, end in generate_subsets(len(input_ids), 250):

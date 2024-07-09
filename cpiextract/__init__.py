@@ -1,6 +1,11 @@
+'''CPIExtract (Compound-Protein Interaction Extract):
+
+A software package to collect and harmonize small molecule and protein interactions
+'''
+
 from .pipelines import Comp2Prot, Prot2Comp
 from .databases import BindingDB, ChEMBL, CTD, Database, DrugBank, DrugCentral, DTC, OTP, PubChem, Stitch
-from .servers import BiomartServer,ChEMBLServer,PubchemServer 
+from .servers import BiomartServer,ChEMBLServer,PubchemServer
 from .data_manager import APIManager, DataManager, LocalManager, SQLManager
 from .sql_connection import sql_connection
 from .utils import helper, identifiers
@@ -14,4 +19,3 @@ __all__ = [
     'sql_connection',
     'helper', 'identifiers'
 ]
-

@@ -1,15 +1,20 @@
+'''Loading,searching,filtering and preprocessing data from DrugBank.'''
+
 import pandas as pd
 import numpy as np
 import time
 from collections import defaultdict
+
+from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
 from ..servers.PubchemServer import PubChemServer
 from ..data_manager import *
 from .Database import Database
 
 class DB(Database):
+    '''Loading,searching,filtering and preprocessing data from DrugBank.'''
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None):
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -18,7 +23,7 @@ class DB(Database):
             self.data_manager = SQLManager(connection, 'DB')
 
 
-    def interactions(self, input_comp: pd.DataFrame):
+    def interactions(self, input_comp: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from DrugBank database interacting with compound passed as input.
 
@@ -126,7 +131,7 @@ class DB(Database):
         return DB_act, statement, DB_raw
 
 
-    def compounds(self, input_protein: pd.DataFrame):
+    def compounds(self, input_protein: pd.DataFrame) -> tuple[pd.DataFrame, str ,pd.DataFrame]:
         """
         Retrieves compounds from db database interacting with proteins passed as input.
 

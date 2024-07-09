@@ -1,4 +1,4 @@
-
+'''Servers to perform search requests.'''
 # from .BiomartServer import BiomartServer
 # from .ChEMBLServer import ChEMBLServer
 # from .PubchemServer import PubchemServer
