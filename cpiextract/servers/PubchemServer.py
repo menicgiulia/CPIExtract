@@ -1,5 +1,6 @@
 '''The server to perform pubchem requests.'''
 
+from ..utils.typing import Strs
 import pubchempy as pcp
 import json
 # import time
@@ -17,7 +18,7 @@ class PubChemServer(metaclass=Singleton):
         '''Return selected columns' original field names in pubchem.'''
         return [pcp.PROPERTY_MAP[col] for col in selected_columns]
 
-    def get_compounds(self, comp: Union[list[str], str], selected_columns: list[str], domain: str='compound', namespace: str='cid') -> pd.DataFrame:
+    def get_compounds(self, comp: Strs, selected_columns: list[str], domain: str='compound', namespace: str='cid') -> pd.DataFrame:
         '''Return compounds' selected properties from pubchem.
         
         Parameters
@@ -58,7 +59,7 @@ class PubChemServer(metaclass=Singleton):
 
         return compounds
     
-    def get_synonyms(self, comp: Union[list[str], str], domain: str='compound', namespace: str='cid') -> pd.DataFrame:
+    def get_synonyms(self, comp: Strs, domain: str='compound', namespace: str='cid') -> pd.DataFrame:
         '''Return synonyms of specified compound(s).
         
         Parameters

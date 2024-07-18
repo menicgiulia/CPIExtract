@@ -2,11 +2,11 @@
 
 from pandas import DataFrame
 from .DataManager import DataManager
-from ..utils.typing import Callable, Strs
+from ..utils.typing import CIDs, Callable
 
 class APIManager(DataManager[dict[str, Callable[..., DataFrame]]]):
     '''Call API function specified by filter_column.'''
-    def retrieve_raw_data(self, filter_column: str, filter_value: Strs, **kwargs) -> DataFrame:
+    def retrieve_raw_data(self, filter_column: str, filter_value: CIDs, **kwargs) -> DataFrame:
         '''Call API function specified by filter_column.'''
         raw_data = self.data[filter_column](filter_value)
         

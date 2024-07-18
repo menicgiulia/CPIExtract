@@ -1,7 +1,7 @@
 '''Base data manager for data retrieving and filtering.'''
 
 from abc import ABC, abstractmethod
-from ..utils.typing import Generic, T, Strs
+from ..utils.typing import CIDs, Generic, T
 
 
 class DataManager(ABC, Generic[T]):
@@ -12,6 +12,6 @@ class DataManager(ABC, Generic[T]):
         self.database = db_name
 
     @abstractmethod
-    def retrieve_raw_data(self, filter_column: str, filter_value: Strs, **kwargs):
+    def retrieve_raw_data(self, filter_column: str, filter_value: CIDs, **kwargs):
         '''Retrieve raw data and filter.'''
         raise NotImplementedError

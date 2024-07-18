@@ -2,12 +2,12 @@
 
 from .DataManager import DataManager
 import pandas as pd
-from ..utils.typing import Strs
+from ..utils.typing import CIDs
 
 class LocalManager(DataManager[pd.DataFrame]):
     '''Data managers for csv/tsv data retrieving and filtering,performed by pandas.'''
 
-    def retrieve_raw_data(self, filter_column: str, filter_value: Strs, **kwargs) -> pd.DataFrame:
+    def retrieve_raw_data(self, filter_column: str, filter_value: CIDs, **kwargs) -> pd.DataFrame:
         '''Retrieve raw data from local databases.'''
         if self.data is None:
             raise ValueError('Database not available')

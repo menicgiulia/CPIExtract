@@ -1,7 +1,7 @@
 '''Data managers for mySQL tables' data retrieving and filtering,performed by mySQL.'''
 
 import mysql.connector
-from ..utils.typing import Connection
+from ..utils.typing import CIDs, Connection
 from .DataManager import DataManager
 import pandas as pd
 import mysql
@@ -9,7 +9,7 @@ import mysql
 class SQLManager(DataManager[Connection]):
     '''Data managers for data retrieving and filtering,performed by mySql.'''
 
-    def retrieve_raw_data(self, filter_column: str, filter_value: list[str] | str, **kwargs) -> pd.DataFrame:
+    def retrieve_raw_data(self, filter_column: str, filter_value: CIDs, **kwargs) -> pd.DataFrame:
         '''Retrieve raw data from SQL tables.'''
         if self.data is None:
             raise ValueError('SQL connection not available')
