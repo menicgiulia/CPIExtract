@@ -1,8 +1,10 @@
+'''Retrieves protein or compond identifiers from servers.'''
+
 from ..servers.BiomartServer import BiomartServer
 import pubchempy as pcp
 import pandas as pd
 
-def protein_identifiers(input_id):
+def protein_identifiers(input_id: int | str) -> pd.DataFrame:
     """
     Retrieves protein identifiers from Biomart.
 
@@ -61,7 +63,7 @@ def protein_identifiers(input_id):
     return input_protein
 
 
-def compound_identifiers(input_id):
+def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataFrame:
     """
     Retrieves compound identifiers and synonyms from PubChem.
 

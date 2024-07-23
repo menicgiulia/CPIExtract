@@ -1,3 +1,5 @@
+'''Template for a pipeline.Load,search,filter,postprocess datas from all of the databases.'''
+
 from abc import ABC
 from ..databases import *
 from ..sql_connection import connect_to_mysql
@@ -5,8 +7,9 @@ import pandas as pd
 import numpy as np
 
 class Pipeline(ABC):
+    '''Template for a pipeline.Load,search,filter,postprocess datas from all of the databases.'''
 
-    def __init__(self, execution_mode='local', dbs: dict=None, server_info: dict=None) -> None:
+    def __init__(self, execution_mode: str = 'local', dbs: dict|None=None, server_info: dict|None=None) -> None:
         """
         Parameters
         ----------
@@ -61,12 +64,13 @@ class Pipeline(ABC):
             'db': DB(database=dbs.get('db', None), connection=self.cnx)
         }
 
-        self.database_args = {}
+        self.database_args: dict[str, tuple] = {}
 
         self.sources = ['PubChem', 'ChEMBL', 'BindingDB', 'Stitch', 'CTD', 'DTC', 'OTP', 'DrugCentral', 'DrugBank']
 
 
-    def _aggregate_pchembl(self, data: pd.DataFrame, index, comp: pd.DataFrame):
+    def _aggregate_pchembl(self, data: pd.DataFrame, index: int, comp: pd.DataFrame) -> pd.DataFrame:
+        '''Calculate mean and std. of pchembl value for the target.'''
         # Calculate the pchembl value for the target, if none, states so
         pchembl = pd.to_numeric(comp['pchembl_value'], errors='coerce').dropna().unique()
         if len(pchembl) > 0:
@@ -79,5 +83,3 @@ class Pipeline(ABC):
             data.loc[index,'std_pchembl'] = 'Sources do not provide activity data'
 
         return data
-
-    

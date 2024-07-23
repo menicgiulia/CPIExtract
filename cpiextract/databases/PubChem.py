@@ -1,16 +1,20 @@
+'''Loading,searching,filtering and preprocessing data from PubChem.'''
+
 import requests
 import time
 import pandas as pd
 import numpy as np
+
 from ..servers.BiomartServer import BiomartServer
 from ..servers.PubchemServer import PubChemServer
 from ..data_manager import *
 from ..utils.helper import generate_subsets
+from ..utils.typing import Connection
 from .Database import Database
 
 class PubChem(Database):
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection: Connection| None=None, database: pd.DataFrame|None=None):
         if connection is not None or database is not None:
             raise ValueError('No SQL connection or database expected for Pubchem')
         funcs = {
@@ -20,7 +24,7 @@ class PubChem(Database):
         }
         self.data_manager = APIManager(funcs)
 
-    def _filter_database(self, pubchem_raw: pd.DataFrame, identifier: str, pChEMBL_thres: float):
+    def _filter_database(self, pubchem_raw: pd.DataFrame, identifier: str, pChEMBL_thres: float) -> pd.DataFrame:
         
         # Drop duplicates, invalid and empty values of identifier and Activity Values
         pubchem_filt = pubchem_raw.dropna(subset=[identifier, 'Activity Value [uM]'])
@@ -42,7 +46,7 @@ class PubChem(Database):
 
         return pubchem_filt
 
-    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0):
+    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from PubChem API interacting with compound passed as input.
 
@@ -155,7 +159,7 @@ class PubChem(Database):
         return pubchem_act, statement, pubchem_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from PubChem database interacting with proteins passed as input.
 
@@ -234,7 +238,7 @@ class PubChem(Database):
         return pubchem_c1, statement, pubchem_raw
     
     
-    def _retrieve_compounds(self, input_comp_id):
+    def _retrieve_compounds(self, input_comp_id) -> pd.DataFrame:
 
         pubchem_raw=pd.DataFrame()
 
@@ -261,7 +265,7 @@ class PubChem(Database):
 
         return pubchem_raw
     
-    def _retrieve_targets(self, gene_list):
+    def _retrieve_targets(self, gene_list) -> pd.DataFrame:
         # Use the PUG REST Pubchem API to assign the tax_id for each gene
         url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/gene/geneid/summary/JSON'
         # Prepare the request payload
@@ -291,7 +295,7 @@ class PubChem(Database):
         gene_tax['GeneID'] = gene_tax['GeneID'].astype(str)
         return gene_tax
     
-    def _retrieve_proteins(self, input_protein_id):
+    def _retrieve_proteins(self, input_protein_id) -> pd.DataFrame:
 
         pubchem_raw = pd.DataFrame()
         # Use PUG REST to get the information of gene activity from PubChem

@@ -1,3 +1,5 @@
+'''Util tools for other modules.'''
+
 from .identifiers import compound_identifiers, protein_identifiers
 from .helper import generate_subsets, Singleton
 

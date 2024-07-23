@@ -1,8 +1,12 @@
+'''Loading,searching,filtering and preprocessing data from Stitch.'''
+
 import pandas as pd
 import numpy as np
 import time
 import io
 import requests
+
+from ..utils.typing import Connection
 from ..servers.PubchemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
 from ..data_manager import *
@@ -11,7 +15,7 @@ from .Database import Database
 
 class Stitch(Database):
     
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection:Connection|None=None, database: pd.DataFrame|None=None):
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -19,7 +23,7 @@ class Stitch(Database):
         else:
             self.data_manager = SQLManager(connection, 'Stitch')
 
-    def interactions(self, input_comp: pd.DataFrame, set_stereo: bool=True):
+    def interactions(self, input_comp: pd.DataFrame, set_stereo: bool=True) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from Stitch database interacting with compound passed as input.
 
@@ -154,7 +158,7 @@ class Stitch(Database):
         return sttch_act, statement, sttch_raw
 
 
-    def compounds(self, input_protein: pd.DataFrame, set_stereo: bool=True):
+    def compounds(self, input_protein: pd.DataFrame, set_stereo: bool=True) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from Stitch database interacting with proteins passed as input.
 
@@ -241,7 +245,7 @@ class Stitch(Database):
         return stitch_c1, statement, stitch_raw
 
     
-    def _extract_ids(self, ids):
+    def _extract_ids(self, ids) -> pd.DataFrame:
 
         names = ['input','value','output','taxid','species','symbol','description']
         params={

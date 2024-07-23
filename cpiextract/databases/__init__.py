@@ -1,3 +1,5 @@
+'''Different databases' implemention of loading,searching,filtering and preprocessing datas.'''
+
 from .BindingDB import BindingDB
 from .ChEMBL import ChEMBL
 from .CTD import CTD

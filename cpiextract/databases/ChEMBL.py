@@ -1,6 +1,10 @@
+'''Loading,searching,filtering and preprocessing data from ChEMBL.'''
+
 import pandas as pd
 import numpy as np
 from chembl_webresource_client.new_client import new_client
+
+from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
 from ..servers.PubchemServer import PubChemServer 
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
@@ -9,8 +13,9 @@ from ..data_manager import *
 import re
 
 class ChEMBL(Database):
+    '''Loading,searching,filtering and preprocessing data from ChEMBL.'''
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None):
         if database is not None:
             self.data_manager = LocalManager(database)
         elif connection is not None:
@@ -33,7 +38,7 @@ class ChEMBL(Database):
             'target_chembl_id': 'Target ChEMBL ID'
         }
 
-    def _filter_database(self, chembl_raw: pd.DataFrame, pChEMBL_thres: float):
+    def _filter_database(self, chembl_raw: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
 
         invalid_activities = ['Not Determined', 'Not Active', 'Not Evaluated', 'inactive', 'inconclusive', 'undetermined', 'No data']
 
@@ -56,7 +61,7 @@ class ChEMBL(Database):
 
         return chembl_act
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list=[], pChEMBL_thres=0):
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list|None=None, pChEMBL_thres=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from chembl API interacting with compound passed as input.
 
@@ -104,6 +109,8 @@ class ChEMBL(Database):
         chembl_act = pd.DataFrame(columns=columns)
         chembl_raw = pd.DataFrame()
         # Find chembl ids from input compound
+        if chembl_ids is None:
+            chembl_ids = []
         chembl_ids.extend(chembl.identify_chembl_ids(input_comp))
         # Check if at least one id has been found
         if len(chembl_ids) > 0 and None not in chembl_ids:
@@ -170,7 +177,7 @@ class ChEMBL(Database):
 
         return chembl_act, statement, chembl_raw
     
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from chEMBL database interacting with proteins passed as input.
 
@@ -266,7 +273,7 @@ class ChEMBL(Database):
         return chembl_c1, statement, chembl_raw
     
 
-    def _retrieve_compounds(self, chembl_ids):
+    def _retrieve_compounds(self, chembl_ids) -> pd.DataFrame:
             chembl_raw = pd.DataFrame(columns=['entrez','gene_type','hgnc_symbol','description','datasource', 'pchembl_value'])
             # API to Obtain all the targets for the list of chembl ids and their reported activities
             for id in chembl_ids: 
@@ -282,7 +289,7 @@ class ChEMBL(Database):
 
             return chembl_raw
     
-    def _retrieve_target_type(self, chembl_act):
+    def _retrieve_target_type(self, chembl_act: pd.DataFrame) -> pd.DataFrame:
         # Filter ChEMBL based on target_type, looking to only use proteins
         target = new_client.target
         dat = []
@@ -294,7 +301,7 @@ class ChEMBL(Database):
 
         return chembl_act
 
-    def _retrieve_proteins(self, input_protein_id):
+    def _retrieve_proteins(self, input_protein_id) -> pd.DataFrame:
         # Use package of Chembl API to get the compound that have an activity with the protein
         activities = new_client.activity.filter(target_chembl_id=input_protein_id)\
                     .only(['molecule_chembl_id','activity_comment','data_validity_comment','target_tax_id',\

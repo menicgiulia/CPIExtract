@@ -1,8 +1,12 @@
+'''Loading,searching,filtering and preprocessing data from OTP.'''
+
 import pandas as pd
 import numpy as np
 import requests
 import time
 import json
+
+from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..servers.PubchemServer import PubChemServer
@@ -11,7 +15,7 @@ from .Database import Database
 
 class OTP(Database):
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None):
         if connection is not None or database is not None:
             raise ValueError('No SQL connection or database expected for OTP')
         funcs = {
@@ -21,7 +25,7 @@ class OTP(Database):
         }
         self.data_manager = APIManager(funcs)
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, use_biblio: bool=False):
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, use_biblio: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from OTP API interacting with compound passed as input.
 
@@ -131,7 +135,7 @@ class OTP(Database):
         return otp_act, statement, otp_raw
 
 
-    def compounds(self, input_protein: pd.DataFrame):
+    def compounds(self, input_protein: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from OTP database interacting with proteins passed as input.
 
@@ -190,7 +194,7 @@ class OTP(Database):
         return otp_c1, statement, otp_raw
     
 
-    def _retrieve_bib_compounds(self, chembl_ids):
+    def _retrieve_bib_compounds(self, chembl_ids) -> pd.DataFrame:
         # Set base URL of GraphQL API endpoint
         base_url = "https://api.platform.opentargets.org/api/v4/graphql"
         # Note: bibliography of OTP only looks for concurrence of IDs in abstracts, it does not look for associations
@@ -256,7 +260,7 @@ class OTP(Database):
 
         return otp_bib
     
-    def _retrieve_met_compounds(self, chembl_ids):
+    def _retrieve_met_compounds(self, chembl_ids) -> pd.DataFrame:
         # Set base URL of GraphQL API endpoint
         base_url = "https://api.platform.opentargets.org/api/v4/graphql"
 
@@ -325,7 +329,7 @@ class OTP(Database):
 
         return otp_met
     
-    def _retrieve_proteins(self, input_protein_id):
+    def _retrieve_proteins(self, input_protein_id) -> pd.DataFrame:
         # Create post request
         variables={"ensembl_gene_id": input_protein_id}
         base_url="https://api.platform.opentargets.org/api/v4/graphql"

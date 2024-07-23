@@ -1,5 +1,9 @@
+'''Loading,searching,filtering and preprocessing data from DrugCentral.'''
+
 import numpy as np
 import pandas as pd
+
+from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
 from ..servers.PubchemServer import PubChemServer
 from .Database import Database
@@ -8,8 +12,9 @@ import time
 
 
 class DrugCentral(Database):
+    '''Loading,searching,filtering and preprocessing data from DrugCentral.'''
 
-    def __init__(self, connection=None, database=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None):
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -17,7 +22,7 @@ class DrugCentral(Database):
         else:
             self.data_manager = SQLManager(connection, 'DC')
 
-    def _filter_database(self, dc_raw: pd.DataFrame, dc_extra: bool):
+    def _filter_database(self, dc_raw: pd.DataFrame, dc_extra: bool) -> pd.DataFrame:
 
         dc_filt = dc_raw.dropna(subset=['ACTION_TYPE'])
         dc_filt = dc_filt.loc[(dc_filt['ORGANISM']=='Homo sapiens') &
@@ -32,7 +37,7 @@ class DrugCentral(Database):
         return dc_filt
     
 
-    def _compute_pchembl(self, dc_dat: pd.DataFrame, pChEMBL_thres: float):
+    def _compute_pchembl(self, dc_dat: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
 
         dc_dat['pchembl_value'] = dc_dat['ACT_VALUE'].apply(lambda x: -np.log10(x / 1e9))
         dc_act = dc_dat.rename(columns={'ACT_TYPE': 'notes'})
@@ -42,7 +47,7 @@ class DrugCentral(Database):
 
         return dc_act
 
-    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0):
+    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from DrugCentral database interacting with compound passed as input.
 
@@ -136,7 +141,7 @@ class DrugCentral(Database):
         return dc_act, statement, dc_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0):
+    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from DrugCentral database interacting with proteins passed as input.
 
