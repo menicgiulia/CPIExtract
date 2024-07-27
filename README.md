@@ -365,9 +365,11 @@ Root folder organization (```__init__.py``` files removed for simplicity):
 │   ├───dbs_config.json                             // file with databases configuration for the mySQL server
 │   ├───input                                       // pipeline input data location
 │   │   ├───db_compounds.csv                        // DrugBank compounds example dataset
-│   │   └───db_proteins.csv                         // DrugBank protein example dataset
+│   │   ├───db_proteins.csv                         // DrugBank protein example dataset
+│   │   └───foodb_compounds.csv                     // FooDB compound example dataset
 │   └───output                                      // pipeline output data location
 │       ├───C2P.csv                                 // Comp2Prot output file for db_compounds.csv
+│       ├───foodb.csv                               // Comp2Prot output file for foodb_compounds.csv
 │       └───P2C.csv                                 // Prot2Comp output file for db_proteins.csv
 │
 └───cpiextract
