@@ -39,6 +39,9 @@ class PubChem(Database):
         pubchem_filt['Activity Value [uM]'] = pubchem_filt['Activity Value [uM]'].str.replace(r'[^0-9\.]','',regex=True)
         # Convert strings into numeric values 
         pubchem_filt['Activity Value [uM]'] = pubchem_filt['Activity Value [uM]'].apply(pd.to_numeric,errors='coerce')
+        # Remove 0 and null values
+        pubchem_filt = pubchem_filt[pubchem_filt['Activity Value [uM]']!=0]
+        pubchem_filt.dropna(subset=['Activity Value [uM]'])
         # Generate pChEMBL values 
         pubchem_filt['pchembl_value'] = -np.log10((pubchem_filt['Activity Value [uM]']/1e6)) 
         # Filter interactions by pChEMBL value

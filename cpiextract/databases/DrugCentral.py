@@ -38,7 +38,7 @@ class DrugCentral(Database):
     
 
     def _compute_pchembl(self, dc_dat: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
-
+        dc_dat = dc_dat[(dc_dat['ACT_VALUE'].notnull()) & (dc_dat['ACT_VALUE'] != 0)]
         dc_dat['pchembl_value'] = dc_dat['ACT_VALUE'].apply(lambda x: -np.log10(x / 1e9))
         dc_act = dc_dat.rename(columns={'ACT_TYPE': 'notes'})
 

@@ -60,8 +60,8 @@ class DTC(Database):
                         (DTC_act['mutation_info'].isnull())].reset_index(drop=True)
         # Converts all the measured values into nM for the calculation of pChEMBL
         DTC_act = self._standard_converter(DTC_act)
-        # Convert infinite values to nan
-        DTC_act['standardized_val'].replace([np.inf, -np.inf], np.nan, inplace=True)
+        # Convert 0 and infinite values to nan
+        DTC_act['standardized_val'].replace([np.inf, 0, -np.inf], np.nan, inplace=True)
         # Remove empty values
         DTC_act = DTC_act[DTC_act['standardized_val'].notnull()]
         # Remove non-numeric characters from the Activity Value (things like > and <)

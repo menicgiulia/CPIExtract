@@ -85,6 +85,7 @@ class BindingDB(Database):
         for col in cols: 
             # Select only non null values for current activity
             bdb_val = bdb_dat.dropna(subset=[col])
+            bdb_val = bdb_val[bdb_val[col] != 0]
             if len(bdb_val) > 0:
                 bdb_act = pd.concat([bdb_act, bdb_val])
                 # Compute pchembl values of entire column
