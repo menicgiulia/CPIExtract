@@ -134,6 +134,16 @@ class Prot2Comp(Pipeline):
                     'drugbank'
                 ]]
 
+        if len(prot_comp) == 0:
+            prot_comp = pd.DataFrame(columns=[
+                    'input_id', 'entrez', 'gene_type', 'hgnc_symbol',
+                    'description', 'inchi', 'inchikey', 'isomeric_smiles',
+                    'iupac_name', 'pchembl_count', 'ave_pchembl',
+                    'std_pchembl', 'src_count', 'pubchem', 'chembl',
+                    'bindingdb', 'stitch', 'ctd', 'dtc', 'otp', 'drugcentral',
+                    'drugbank'
+                ])
+
         return prot_comp, states
 
     def _postprocess_databases(self, comp_all: pd.DataFrame) -> pd.DataFrame:

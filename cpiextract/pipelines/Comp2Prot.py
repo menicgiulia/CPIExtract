@@ -148,6 +148,16 @@ class Comp2Prot(Pipeline):
                     'bindingdb', 'stitch', 'ctd', 'dtc', 'otp', 'drugcentral',
                     'drugbank'
                 ]]
+        
+        if len(comp_tar) == 0:
+            comp_tar = pd.DataFrame(columns=[
+                    'input_id', 'inchi', 'inchikey', 'isomeric_smiles',
+                    'iupac_name', 'entrez', 'gene_type', 'hgnc_symbol',
+                    'description', 'pchembl_count', 'ave_pchembl',
+                    'std_pchembl', 'src_count', 'pubchem', 'chembl',
+                    'bindingdb', 'stitch', 'ctd', 'dtc', 'otp', 'drugcentral',
+                    'drugbank'
+                ])
 
         return comp_tar, states
 
