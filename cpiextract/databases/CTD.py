@@ -4,15 +4,15 @@ import pandas as pd
 import numpy as np
 
 from ..utils.typing import Connection
-from ..servers.PubchemServer import PubChemServer
+from ..servers.PubChemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
 from .Database import Database
 from ..data_manager import *
 
 class CTD(Database):
-    '''Loading,searching,filtering and preprocessing data from CTD.'''
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -24,12 +24,12 @@ class CTD(Database):
                         # Filter to Homo Sapiens only
         CTD_act = CTD_raw.loc[(CTD_raw['OrganismID'] == 9606) &
                             # Only select ligand-protein binding
-                            (CTD_raw['InteractionActions'].str.contains('affects\^binding')) &
+                            (CTD_raw['InteractionActions'].str.contains(r'affects\^binding')) &
                             # Only protein interactions are collected
                             (CTD_raw['GeneForms']==('protein'))].drop_duplicates().reset_index(drop=True)
         return CTD_act
 
-    def interactions(self, input_comp: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from CTD database interacting with compound passed as input.
 
@@ -72,12 +72,14 @@ class CTD(Database):
         # Create an empty DataFrame with the specified columns
         CTD_act = pd.DataFrame(columns=columns)
         CTD_raw = pd.DataFrame()
-        input_comp = input_comp.dropna(subset=['cid'])
+        input_comp = input_comp.dropna(subset=['inchikey'])
         if len(input_comp) > 0:
-            input_comp_id = input_comp['cid'][0]
-
-            CTD_raw = self.data_manager.retrieve_raw_data('CID', input_comp_id)
-            # CTD_raw = CTD_data[CTD_data['cid'] == input_comp_id].reset_index(drop=True)
+            if merge_stereoisomers == True: #FirstBlock only
+                input_comp_id = input_comp['inchikey_fb'][0]
+                CTD_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else: #Full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                CTD_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
 
             # Check if at least one match has been found
             if len(CTD_raw) > 0:
@@ -127,7 +129,7 @@ class CTD(Database):
         return CTD_act, statement, CTD_raw
     
     
-    def compounds(self, input_protein: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from CTD database interacting with proteins passed as input.
 
@@ -136,7 +138,7 @@ class CTD(Database):
         - Filters CTD database to obtain compounds interacting with input proteins \\
         Constraints:
             - Organism = homo sapiens
-            - InteractionActions contains 'affects\^binding'
+            - InteractionActions contains 'affects\\^binding'
             - GeneForms = protein 
         - Uses Pubchempy to obtain compounds info to return, searching with CID.
 
