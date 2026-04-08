@@ -6,14 +6,14 @@ import numpy as np
 from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
-from ..servers.PubchemServer import PubChemServer
+from ..servers.PubChemServer import PubChemServer
 from .Database import Database
 from ..data_manager import *
 
-
 class DTC(Database):
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -61,7 +61,7 @@ class DTC(Database):
         # Converts all the measured values into nM for the calculation of pChEMBL
         DTC_act = self._standard_converter(DTC_act)
         # Convert 0 and infinite values to nan
-        DTC_act['standardized_val'].replace([np.inf, 0, -np.inf], np.nan, inplace=True)
+        DTC_act['standardized_val'].replace([np.inf, 0, -np.inf], np.nan, inplace=True).infer_objects(copy=False)
         # Remove empty values
         DTC_act = DTC_act[DTC_act['standardized_val'].notnull()]
         # Remove non-numeric characters from the Activity Value (things like > and <)
@@ -76,7 +76,8 @@ class DTC(Database):
         return DTC_act
             
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+
         """
         Retrieves proteins from DTC database interacting with compound passed as input.
 
@@ -126,67 +127,78 @@ class DTC(Database):
         DTC_act = pd.DataFrame(columns=columns)
         DTC_raw = pd.DataFrame(columns=columns)
         
-        # Check if chembl_ids has already been computed from the input compound, otherwise do so
-        if not chembl_ids:
-            chembl_ids.extend(chembl.identify_chembl_ids(input_comp))
+        if isinstance(self.data_manager, APIManager):
+            # API MODE - Use ChEMBL ID search (full inchikey match only)
+            if not chembl_ids:
+                chembl_ids.extend(chembl.identify_chembl_ids(input_comp))
         
-        if len(chembl_ids) > 0 and None not in chembl_ids:
-            # Filter DTC by compound of interest using ChEMBL IDs
-            DTC_raw = self.data_manager.retrieve_raw_data('compound_id', chembl_ids)
-            # DTC_raw = DTC_data.loc[DTC_data['compound_id'].isin(chembl_ids)].reset_index(drop=True)
-            
-            # Check if at least one match has been found
-            if len(DTC_raw) > 0:
-
-                DTC_filt = self._filter_database(DTC_raw)
-
-                DTC_filt['molecular_weight'] = input_comp['molecular_weight'].iloc[0]
-
-                # Filter database
-                DTC_act = self._standardize_database(DTC_filt, dtc_mutated, pChEMBL_thres)
-                
-                # Note: DTC has no tax_id or species column, can only filter for human via biomart conversion
-                if len(DTC_act) > 0:
-                    # Unify gene identifiers by Converting DTC with biomart
-                    ensembl = BiomartServer()
-                    attributes = ['uniprotswissprot', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
-                    names = ['uniprot','entrez','gene_type','hgnc_symbol','description']
-                    # Search by uniprot id match to biomart
-                    input_type = 'uniprotswissprot'
-                    
-                    dtc_targets = pd.DataFrame(columns=names)
-                    
-                    input_genes = list(DTC_act['target_id'])
-                    
-                    dtc_targets = ensembl.subset_search(input_type, input_genes, attributes, names)
-
-                    # For each compound, assign specific biomart column values to the ones from the original DTC database
-                    for index, row in DTC_act.iterrows():
-                        S1 = dtc_targets.loc[dtc_targets['uniprot']==row['target_id']]
-                        if len(S1) > 0:
-                            DTC_act.loc[index,'entrez'] = S1['entrez'].iloc[0]
-                            DTC_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
-                            DTC_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
-                            DTC_act.loc[index,'description'] = S1['description'].iloc[0]
-                        else:
-                            DTC_act.loc[index, 'entrez'] = None
-                            DTC_act.loc[index, 'gene_type'] = None
-                            DTC_act.loc[index, 'hgnc_symbol'] = None
-                            DTC_act.loc[index, 'description'] = None  
-                            Des='Failed to convert the gene ID'
-                    DTC_act['datasource']='DTC'
-                    statement='completed'
-                else:
-                    statement='Filter reduced interactions to 0'
+            if len(chembl_ids) > 0 and None not in chembl_ids:
+                DTC_raw = self.data_manager.retrieve_raw_data('compound_id', chembl_ids)
             else:
-                statement='No interaction data'
-        else:
-            statement = 'No ChEMBL ids found'
+                return DTC_act, 'No ChEMBL ids found', DTC_raw
 
+        else: # LOCAL/SQL MODE - Query Local ChEMBL overlap (supports first-block)
+            input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
+            if len(input_comp) == 0:
+                return DTC_act, 'Input compound does not contain inchi key', DTC_raw
+        
+            if merge_stereoisomers == True: # Search by first block
+                input_comp_id = input_comp['inchikey_fb'][0]
+                DTC_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else: # Search by full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                DTC_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
+
+        # Check if at least one match has been found
+        if len(DTC_raw) > 0:
+
+            DTC_filt = self._filter_database(DTC_raw)
+            DTC_filt['molecular_weight'] = input_comp['molecular_weight'].iloc[0]
+
+            # Filter database
+            DTC_act = self._standardize_database(DTC_filt, dtc_mutated, pChEMBL_thres)
+                
+            # Note: DTC has no tax_id or species column, can only filter for human via biomart conversion
+            if len(DTC_act) > 0:
+                # Unify gene identifiers by Converting DTC with biomart
+                ensembl = BiomartServer()
+                attributes = ['uniprotswissprot', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
+                names = ['uniprot','entrez','gene_type','hgnc_symbol','description']
+                # Search by uniprot id match to biomart
+                input_type = 'uniprotswissprot'
+                
+                dtc_targets = pd.DataFrame(columns=names)
+                    
+                input_genes = list(DTC_act['target_id'])
+                
+                dtc_targets = ensembl.subset_search(input_type, input_genes, attributes, names)
+
+                # For each compound, assign specific biomart column values to the ones from the original DTC database
+                for index, row in DTC_act.iterrows():
+                    S1 = dtc_targets.loc[dtc_targets['uniprot']==row['target_id']]
+                    if len(S1) > 0:
+                        DTC_act.loc[index,'entrez'] = S1['entrez'].iloc[0]
+                        DTC_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
+                        DTC_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
+                        DTC_act.loc[index,'description'] = S1['description'].iloc[0]
+                    else:
+                        DTC_act.loc[index, 'entrez'] = None
+                        DTC_act.loc[index, 'gene_type'] = None
+                        DTC_act.loc[index, 'hgnc_symbol'] = None
+                        DTC_act.loc[index, 'description'] = None  
+                        Des='Failed to convert the gene ID'
+                DTC_act['datasource']='DTC'
+                statement='completed'
+            else:
+                statement='Filter reduced interactions to 0'
+        else:
+            statement='No interaction data'
+    
         return DTC_act, statement, DTC_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+
         """
         Retrieves compounds from DTC database interacting with proteins passed as input.
 
@@ -262,12 +274,27 @@ class DTC(Database):
                         DTC_act = self._standardize_database(DTC_c, dtc_mutated, pChEMBL_thres)
 
                         if len(DTC_act) > 0:
+                            required_cols = columns[:-2] + ['CID', 'compound_id', 'standard_type', 
+                                        'standard_value', 'standard_units', 
+                                        'pchembl_value', 'activity_comment']
+                            for col in required_cols:
+                                if col not in DTC_act.columns:
+                                    DTC_act[col] = None
+                            
                             # Extend compounds information
-                            DTC_c1 = DTC_act[columns[:-2]+['CID', 'compound_id', 'standard_type', 'standard_value', 'standard_units', 
-                                                'pchembl_value', 'activity_comment']].drop_duplicates()
+                            DTC_c1 = DTC_act[required_cols].drop_duplicates()
+                            
                             # Add additional information
                             DTC_c1['notes'] = np.nan
                             DTC_c1['datasource'] = 'DTC'
+                            
+                            # Ensure final columns match expected format
+                            for col in columns:
+                                if col not in DTC_c1.columns:
+                                    DTC_c1[col] = None
+                            
+                            DTC_c1 = DTC_c1[columns]
+                            
                             statement = 'completed'
                         else:
                             statement = 'Standardization reduced interactions to 0'
@@ -278,12 +305,13 @@ class DTC(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input protein doesn\'t contain uniprot id'                         
+            statement = 'Input protein does not contain uniprot id'                         
         
         return DTC_c1, statement, DTC_raw
 
 
     def _standard_converter(self, DTC_act: pd.DataFrame) -> pd.DataFrame:
+
         """
         Converts all types from DTC database to those needed for pCHEMBL by storing the respective
         standardized value. Also converts all units to nM as it is required to compute pCHEMBL.
