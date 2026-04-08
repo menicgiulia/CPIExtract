@@ -2,11 +2,11 @@
 
 import pandas as pd
 import numpy as np
-from chembl_webresource_client.new_client import new_client
 
 from ..utils.typing import Connection
+from chembl_webresource_client.new_client import new_client
 from ..servers.BiomartServer import BiomartServer
-from ..servers.PubchemServer import PubChemServer 
+from ..servers.PubChemServer import PubChemServer 
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from .Database import Database
 from ..data_manager import *
@@ -15,7 +15,8 @@ import re
 class ChEMBL(Database):
     '''Loading,searching,filtering and preprocessing data from ChEMBL.'''
 
-    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
         if database is not None:
             self.data_manager = LocalManager(database)
         elif connection is not None:
@@ -61,7 +62,8 @@ class ChEMBL(Database):
 
         return chembl_act
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list|None=None, pChEMBL_thres=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list|None=None, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+
         """
         Retrieves proteins from chembl API interacting with compound passed as input.
 
@@ -109,75 +111,84 @@ class ChEMBL(Database):
         chembl_act = pd.DataFrame(columns=columns)
         chembl_raw = pd.DataFrame()
         # Find chembl ids from input compound
-        if chembl_ids is None:
-            chembl_ids = []
-        chembl_ids.extend(chembl.identify_chembl_ids(input_comp))
-        # Check if at least one id has been found
-        if len(chembl_ids) > 0 and None not in chembl_ids:
- 
-            chembl_raw = self.data_manager.retrieve_raw_data('Molecule ChEMBL ID', chembl_ids)
-            try:
-                chembl_raw.reset_index()
-            except:
-                chembl_raw = pd.DataFrame()
+
+        # Check execution mode
+        if isinstance(self.data_manager, APIManager):
+            chembl_ids.extend(chembl.identify_chembl_ids(input_comp))
+            if len(chembl_ids) > 0 and None not in chembl_ids:
+                chembl_raw = self.data_manager.retrieve_raw_data('Molecule ChEMBL ID', chembl_ids)
+            else:
+                return chembl_act, 'No ChEMBL ids found', chembl_raw
+        else:
+            # LOCAL/SQL MODE - inchikey search
+            if merge_stereoisomers == True: #FirstBlock only
+                input_comp_id = input_comp['inchikey_fb'][0]
+                chembl_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else: #Full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                chembl_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
+    
+        try:
+            chembl_raw.reset_index()
+        except:
+            chembl_raw=pd.DataFrame()
             
-            if len(chembl_raw) > 0:
-                # Filter ChEMBL for high quality interactions. This follows: Bosc, N. et al. J. cheminformatics 11, 1–16 (2019)
-                chembl_act = self._filter_database(chembl_raw, pChEMBL_thres)
+        if len(chembl_raw) > 0:
+            # Filter ChEMBL for high quality interactions. This follows: Bosc, N. et al. J. cheminformatics 11, 1–16 (2019)
+            chembl_act = self._filter_database(chembl_raw, pChEMBL_thres)
 
-                if len(chembl_act) > 0:
-                    # Retrieve target type if not already available
-                    if 'Target Type' not in chembl_act.columns:
-                        chembl_act = self._retrieve_target_type(chembl_act)
+            if len(chembl_act) > 0:
+                # Retrieve target type if not already available
+                if 'Target Type' not in chembl_act.columns:
+                    chembl_act = self._retrieve_target_type(chembl_act)
 
-                    # Keep only relevant columns
-                    chembl_act = chembl_act[['Molecule ChEMBL ID', 'Comment', 'Data Validity Comment', 'Target Organism',
-                                             'Source ID', 'pChEMBL Value', 'Target ChEMBL ID', 'Target Type']]
-                    # Only use int. w/proteins, removes cell lines and RNA
-                    chembl_act = chembl_act.loc[chembl_act['Target Type']=='SINGLE PROTEIN'] 
-                    chembl_act = chembl_act.rename(columns={'pChEMBL Value': 'pchembl_value'}).reset_index(drop=True)
+                # Keep only relevant columns
+                chembl_act = chembl_act[['Molecule ChEMBL ID', 'inchikey', 'CID', 'Comment', 'Data Validity Comment', 'Target Organism',
+                                         'Source ID', 'pChEMBL Value', 'Target ChEMBL ID', 'Target Type']]
+                # Only use int. w/proteins, removes cell lines and RNA
+                chembl_act = chembl_act.loc[chembl_act['Target Type']=='SINGLE PROTEIN'] 
+                chembl_act = chembl_act.rename(columns={'pChEMBL Value': 'pchembl_value'}).reset_index(drop=True)
                     
-                    if len(chembl_act) > 0:
-                        # Unify gene identifiers by Converting ChEMBL with biomart
-                        ensembl = BiomartServer()
-                        # ChEMBL uses chembl ids
-                        input_type='chembl' 
-                        attributes = ['chembl', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
-                        names = ['chembl','entrez','gene_type','hgnc_symbol','description']
-                        chembl_targets=pd.DataFrame(columns=names)
+                if len(chembl_act) > 0:
+                    # Unify gene identifiers by Converting ChEMBL with biomart
+                    ensembl = BiomartServer()
+                    # ChEMBL uses chembl ids
+                    input_type='chembl' 
+                    attributes = ['chembl', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
+                    names = ['chembl','entrez','gene_type','hgnc_symbol','description']
+                    chembl_targets=pd.DataFrame(columns=names)
+                    
+                    input_genes=list(chembl_act['Target ChEMBL ID'])
                         
-                        input_genes=list(chembl_act['Target ChEMBL ID'])
-                        
-                        chembl_targets=ensembl.subset_search(input_type, input_genes, attributes, names)
+                    chembl_targets=ensembl.subset_search(input_type, input_genes, attributes, names)
 
-                        # For each compound, assign specific biomart column values to the ones from the original chembl database
-                        for index, row in chembl_act.iterrows():
-                            S1 = chembl_targets.loc[chembl_targets['chembl']==row['Target ChEMBL ID']]
-                            if len(S1) > 0:
-                                chembl_act.loc[index, 'entrez'] = S1['entrez'].iloc[0]
-                                chembl_act.loc[index, 'gene_type'] = S1['gene_type'].iloc[0]
-                                chembl_act.loc[index, 'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
-                                chembl_act.loc[index, 'description'] = S1['description'].iloc[0]
-                            else:
-                                chembl_act.loc[index, 'entrez'] = None
-                                chembl_act.loc[index, 'gene_type'] = None
-                                chembl_act.loc[index, 'hgnc_symbol'] = None
-                                chembl_act.loc[index, 'description'] = None  
-                                Des='Failed to convert the gene ID'
-                        chembl_act['datasource'] = 'ChEMBL'
-                        statement = 'completed'
-                    else:
-                        statement = 'Filter reduced interactions to 0'
+                    # For each compound, assign specific biomart column values to the ones from the original chembl database
+                    for index, row in chembl_act.iterrows():
+                        S1 = chembl_targets.loc[chembl_targets['chembl']==row['Target ChEMBL ID']]
+                        if len(S1) > 0:
+                            chembl_act.loc[index, 'entrez'] = S1['entrez'].iloc[0]
+                            chembl_act.loc[index, 'gene_type'] = S1['gene_type'].iloc[0]
+                            chembl_act.loc[index, 'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
+                            chembl_act.loc[index, 'description'] = S1['description'].iloc[0]
+                        else:
+                            chembl_act.loc[index, 'entrez'] = None
+                            chembl_act.loc[index, 'gene_type'] = None
+                            chembl_act.loc[index, 'hgnc_symbol'] = None
+                            chembl_act.loc[index, 'description'] = None  
+                            Des='Failed to convert the gene ID'
+                    chembl_act['datasource'] = 'ChEMBL'
+                    statement = 'completed'
                 else:
                     statement = 'Filter reduced interactions to 0'
             else:
-                statement = 'No interaction data'
+                statement = 'Filter reduced interactions to 0'
         else:
-            statement = 'No ChEMBL ids found'
+            statement = 'No interaction data'
 
         return chembl_act, statement, chembl_raw
     
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+
         """
         Retrieves compounds from chEMBL database interacting with proteins passed as input.
 
@@ -268,7 +279,7 @@ class ChEMBL(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input protein doesn\'t contain chembl id'
+            statement = 'Input protein does not contain chembl id'
 
         return chembl_c1, statement, chembl_raw
     
