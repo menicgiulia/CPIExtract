@@ -3,9 +3,8 @@
 import numpy as np
 import pandas as pd
 import re
-
 from ..servers.BiomartServer import BiomartServer
-from ..servers.PubchemServer import PubChemServer
+from ..servers.PubChemServer import PubChemServer
 from .Database import Database
 from ..data_manager import *
 from ..utils.typing import Connection
@@ -14,8 +13,9 @@ import time
 class BindingDB(Database):
     '''Loading,searching,filtering and preprocessing data from BindingDB.'''
 
-    def __init__(self, connection: Connection|None=None, database:pd.DataFrame|None=None):
-        # if not connection and not database:
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
+       # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
             self.data_manager = LocalManager(database)
@@ -85,7 +85,7 @@ class BindingDB(Database):
         for col in cols: 
             # Select only non null values for current activity
             bdb_val = bdb_dat.dropna(subset=[col])
-            bdb_val = bdb_val[bdb_val[col] != 0]
+	    bdb_val = bdb_val[bdb_val[col] != 0]
             if len(bdb_val) > 0:
                 bdb_act = pd.concat([bdb_act, bdb_val])
                 # Compute pchembl values of entire column
@@ -107,7 +107,7 @@ class BindingDB(Database):
                 
 
 
-    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from bdb database interacting with compound passed as input.
 
@@ -140,7 +140,7 @@ class BindingDB(Database):
             Raw Dataframe containing all BindingDB info about the input compound
         """
 
-        columns = ['entrez','gene_type','hgnc_symbol','description','pchembl_value','datasource']
+        columns = ['inchikey','entrez','gene_type','hgnc_symbol','description','pchembl_value','datasource']
         # Create an empty DataFrame with the specified columns
         bdb_act = pd.DataFrame(columns=columns)
         bdb_raw = pd.DataFrame(columns=columns)
@@ -148,10 +148,15 @@ class BindingDB(Database):
         input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
         # Check if there are any input compounds remaining  
         if len(input_comp) > 0:
-            # Select compound from BindingDB data based on inchi key
-            input_comp_id = input_comp['inchikey'][0]
-            bdb_raw = self.data_manager.retrieve_raw_data('Ligand InChI Key', input_comp_id)
-            # bdb_raw = BDB_data.loc[BDB_data['Ligand InChI Key']==input_comp_id].reset_index(drop=True)
+            if merge_stereoisomers==True: # Match only first block
+                input_comp_id = input_comp['inchikey_fb'][0]
+                bdb_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else:
+                # Select compound from BindingDB data based on full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                bdb_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
+                # bdb_raw = BDB_data.loc[BDB_data['inchikey']==input_comp_id].reset_index(drop=True)
+            
             if len(bdb_raw) > 0:
                 # Filter database
                 bdb_filt = self._filter_database(bdb_raw)
@@ -199,7 +204,7 @@ class BindingDB(Database):
         return bdb_act, statement, bdb_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from bdb database interacting with proteins passed as input.
 
@@ -286,10 +291,9 @@ class BindingDB(Database):
                             bdb_c1 = compounds.rename(columns=pc.properties)
 
                             # Add additional values from activity dataframe
-                            bdb_info = bdb_act[['Ligand InChI Key', 'UniProt (SwissProt) Primary ID of Target Chain', 
+                            bdb_info = bdb_act[['inchikey', 'UniProt (SwissProt) Primary ID of Target Chain', 
                                                 'BindingDB Ligand Name', 'pchembl_value', 'notes']].\
-                                        rename(columns={'Ligand InChI Key': 'inchikey', 
-                                                        'UniProt (SwissProt) Primary ID of Target Chain': 'uniprotid'}).\
+                                        rename(columns={'UniProt (SwissProt) Primary ID of Target Chain': 'uniprotid'}).\
                                                         drop_duplicates()
                             
                             bdb_c1 = pd.merge(bdb_c1, bdb_info, on='inchikey', how='left')
@@ -305,4 +309,5 @@ class BindingDB(Database):
                 statement = 'No interaction data'
         else:
             statement = 'Input protein doesn\'t contain uniprot id'
+            
         return bdb_c1, statement, bdb_raw
