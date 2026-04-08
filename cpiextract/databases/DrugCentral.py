@@ -5,16 +5,16 @@ import pandas as pd
 
 from ..utils.typing import Connection
 from ..servers.BiomartServer import BiomartServer
-from ..servers.PubchemServer import PubChemServer
+from ..servers.PubChemServer import PubChemServer
 from .Database import Database
 from ..data_manager import *
 import time
 
 
 class DrugCentral(Database):
-    '''Loading,searching,filtering and preprocessing data from DrugCentral.'''
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -23,7 +23,7 @@ class DrugCentral(Database):
             self.data_manager = SQLManager(connection, 'DC')
 
     def _filter_database(self, dc_raw: pd.DataFrame, dc_extra: bool) -> pd.DataFrame:
-
+	
         dc_filt = dc_raw.dropna(subset=['ACTION_TYPE'])
         dc_filt = dc_filt.loc[(dc_filt['ORGANISM']=='Homo sapiens') &
                              (dc_filt['ACT_TYPE'].isin(['IC50', 'Ki', 'EC50', 'Kd', 'AC50'])) &
@@ -38,7 +38,8 @@ class DrugCentral(Database):
     
 
     def _compute_pchembl(self, dc_dat: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
-        dc_dat = dc_dat[(dc_dat['ACT_VALUE'].notnull()) & (dc_dat['ACT_VALUE'] != 0)]
+
+	dc_dat = dc_dat[(dc_dat['ACT_VALUE'].notnull()) & (dc_dat['ACT_VALUE'] != 0)]
         dc_dat['pchembl_value'] = dc_dat['ACT_VALUE'].apply(lambda x: -np.log10(x / 1e9))
         dc_act = dc_dat.rename(columns={'ACT_TYPE': 'notes'})
 
@@ -47,7 +48,7 @@ class DrugCentral(Database):
 
         return dc_act
 
-    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from DrugCentral database interacting with compound passed as input.
 
@@ -91,13 +92,16 @@ class DrugCentral(Database):
         input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
         # Check if there are any input compounds remaining  
         if len(input_comp) > 0:
-            # Select compound from BindingDB data based on inchi key
-            input_comp_id = input_comp['inchikey'][0]
-            dc_raw = self.data_manager.retrieve_raw_data('InChIKey', input_comp_id)
+            if merge_stereoisomers == True: #FirstBlock only
+                input_comp_id = input_comp['inchikey_fb'][0]
+                dc_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else: #Full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                dc_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
+
             if len(dc_raw) > 0:
                 # Filter database
                 dc_filt = self._filter_database(dc_raw, dc_extra)
-                dc_filt.drop(['SMILES','InChI'], axis=1, inplace=True)
                 # Compute pchembl values
                 dc_act = self._compute_pchembl(dc_filt, pChEMBL_thres)
                 
@@ -136,12 +140,12 @@ class DrugCentral(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input compound doesn\'t contain inchi key'
+            statement = 'Input compound does not contain inchikey'
 
         return dc_act, statement, dc_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from DrugCentral database interacting with proteins passed as input.
 
@@ -211,7 +215,7 @@ class DrugCentral(Database):
                         # Filter only columns from pubchempy to return
                         selected_columns = pc.get_columns(columns[:-2])
                         compounds = pd.DataFrame()
-                        ids = list(dc_act['InChIKey'].unique())
+                        ids = list(dc_act['inchikey'].unique())
                         for id in ids:
                             try:
                                 comp = pc.get_compounds(id, selected_columns, namespace='inchikey')
@@ -224,10 +228,9 @@ class DrugCentral(Database):
                             dc_c1 = compounds.rename(columns=pc.properties)
 
                             # Add additional values from activity dataframe
-                            dc_info = dc_act[['InChIKey', 'ACCESSION', 'TARGET_CLASS', 'ACT_COMMENT',
+                            dc_info = dc_act[['inchikey', 'ACCESSION', 'TARGET_CLASS', 'ACT_COMMENT',
                                                 'pchembl_value', 'notes']].\
-                                        rename(columns={'InChIKey': 'inchikey', 
-                                                        'ACCESSION': 'uniprotid'}).\
+                                        rename(columns={'ACCESSION': 'uniprotid'}).\
                                                         drop_duplicates()
                             
                             dc_c1 = pd.merge(dc_c1, dc_info, on='inchikey', how='left')
@@ -242,5 +245,5 @@ class DrugCentral(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input protein doesn\'t contain UniProt ID'
+            statement = 'Input protein does not contain UniProt ID'
         return dc_c1, statement, dc_raw
