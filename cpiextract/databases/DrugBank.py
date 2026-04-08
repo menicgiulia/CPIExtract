@@ -3,18 +3,19 @@
 import pandas as pd
 import numpy as np
 import time
-from collections import defaultdict
 
 from ..utils.typing import Connection
+from collections import defaultdict
 from ..servers.BiomartServer import BiomartServer
-from ..servers.PubchemServer import PubChemServer
+from ..servers.PubChemServer import PubChemServer
 from ..data_manager import *
 from .Database import Database
 
 class DB(Database):
     '''Loading,searching,filtering and preprocessing data from DrugBank.'''
 
-    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None):
+    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -23,7 +24,8 @@ class DB(Database):
             self.data_manager = SQLManager(connection, 'DB')
 
 
-    def interactions(self, input_comp: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+
         """
         Retrieves proteins from DrugBank database interacting with compound passed as input.
 
@@ -68,11 +70,14 @@ class DB(Database):
         # Create a drugbank activity dataframe 
         DB_raw = pd.DataFrame(columns=columns) 
 
-        input_comp = input_comp.dropna(subset=['cid'])
+        input_comp = input_comp.dropna(subset=['inchikey'])
         if len(input_comp) > 0:
-
-            input_comp_id = input_comp['cid'][0]
-            DB_raw = self.data_manager.retrieve_raw_data('CID', input_comp_id)
+            if merge_stereoisomers == True: #FirstBlock only
+                input_comp_id = input_comp['inchikey_fb'][0]
+                DB_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else: #Full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                DB_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
 
             # Try searching with synonyms instead
             if len(DB_raw) == 0:
@@ -127,11 +132,12 @@ class DB(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement= 'Compound doesn\'t have any cids'        
+            statement= 'Compound does not have any inchikeys'        
         return DB_act, statement, DB_raw
 
 
-    def compounds(self, input_protein: pd.DataFrame) -> tuple[pd.DataFrame, str ,pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str ,pd.DataFrame]:
+
         """
         Retrieves compounds from db database interacting with proteins passed as input.
 
@@ -197,12 +203,12 @@ class DB(Database):
                             db_c1 = pd.merge(db_c1, db_info, on='CID')
                     else:
                         # Remove duplicates and null values for inchikey
-                        DB_act = DB_act.dropna(subset=['InChIKey']).drop_duplicates(subset=['InChIKey'])\
+                        DB_act = DB_act.dropna(subset=['inchikey']).drop_duplicates(subset=['inchikey'])\
                             .reset_index(drop=True)    
                         compounds = pd.DataFrame()
                         selected_columns = pc.get_columns(columns[:-2])
                         # Perform search using Inchi key
-                        for inchi in DB_act['InChIKey']:
+                        for inchi in DB_act['inchikey']:
                             try:
                                 # Retrieve compound using pubchempy
                                 comp = (pc.get_compounds(inchi, selected_columns, namespace='inchikey'))
@@ -213,8 +219,8 @@ class DB(Database):
 
                         if len(compounds) > 0:
                             db_c1 = pd.concat([db_c1, compounds.rename(columns=pc.properties)])
-                            db_info = DB_act[['InChIKey', 'drugbank-id', 'name', 'HGNC']].\
-                                    rename(columns={'InChIKey': 'inchikey', 'drugbank-id': 'compound_id', 
+                            db_info = DB_act[['inchikey', 'drugbank-id', 'name', 'HGNC']].\
+                                    rename(columns={'drugbank-id': 'compound_id', 
                                                     'name': 'compound_name', 'HGNC': 'hgnc_id'}).drop_duplicates()
                             # Add additional values from activity dataframe
                             db_c1 = pd.merge(db_c1, db_info, on='inchikey', how='left')
@@ -232,7 +238,7 @@ class DB(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input protein doesn\'t contain HGNC'                  
+            statement = 'Input protein does not contain HGNC'                  
 
         return db_c1, statement, DB_raw
 
@@ -255,8 +261,8 @@ class DB(Database):
     #         if type(row['calculated-properties']) == dict:
     #             for prop in row['calculated-properties'].values():
     #                 try:
-    #                     if prop['kind'][0][0] == 'InChIKey':
-    #                         DB_act.loc[index, 'InChIKey'] = prop['value'][0][0]
+    #                     if prop['kind'][0][0] == 'inchikey':
+    #                         DB_act.loc[index, 'inchikey'] = prop['value'][0][0]
     #                         break
     #                 except:
     #                     None
@@ -269,7 +275,7 @@ class DB(Database):
     #     DB_data['drugbank-id'] = DB_data['drugbank-id'].apply(lambda x: x[0][0] if x else None)
 
     #     # Add inchikey column
-    #     DB_data['InChIKey'] = None
+    #     DB_data['inchikey'] = None
     #     # Extract inchikey
     #     DB_data = self._find_compound_info(DB_data)
 
@@ -309,5 +315,5 @@ class DB(Database):
 
     #     DB_data = pd.concat([DB_data, new_data], axis=1)
     #     DB_data = DB_data.explode(['HGNC', 'protein_name', 'protein_type']).reset_index(drop=True)
-    #     DB_data = DB_data[['drugbank-id', 'name', 'InChIKey', 'HGNC', 'organism', 'protein_name', 'protein_type']]
+    #     DB_data = DB_data[['drugbank-id', 'name', 'inchikey', 'HGNC', 'organism', 'protein_name', 'protein_type']]
     #     return DB_data
