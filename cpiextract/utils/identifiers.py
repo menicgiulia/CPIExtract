@@ -1,8 +1,10 @@
 '''Retrieves protein or compond identifiers from servers.'''
 
 from ..servers.BiomartServer import BiomartServer
+from ..servers.PubChemServer import PubChemServer
 import pubchempy as pcp
 import pandas as pd
+import time
 
 def protein_identifiers(input_id: int | str) -> pd.DataFrame:
     """
@@ -104,6 +106,9 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
                     cids = pcp.get_cids(input_id, namespace='smiles', searchtype=None, as_dataframe=False) 
                     c = pcp.Compound.from_cid(cids[0])
 
+            # API PubChem Limit. conservative at 0.5 while 0.25 is the hard minimum 
+            time.sleep(0.4)
+
             # Select info to keep from pubchem API into series
             data = c.to_series(properties=['isomeric_smiles','canonical_smiles','inchi','inchikey','synonyms','iupac_name','molecular_formula','molecular_weight']) 
         
@@ -125,4 +130,18 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
         except: 
             raise TypeError("Input needs to be CID, InChI, InChIKey, or SMILES. If error persists, then likely input identifier does not exist on PubChem.")
     
+    pcs = PubChemServer()
+    if 'inchikey' in input_compound.columns:
+        # Handle single row case
+        if len(input_compound) == 1:
+            inchikey_val = input_compound['inchikey'].iloc[0]
+            input_compound['inchikey_fb'] = pcs.get_inchikey_first_block(inchikey_val)
+        # Handle multiple rows case
+        else:
+            input_compound['inchikey_fb'] = input_compound['inchikey'].apply(
+                lambda x: pcs.get_inchikey_first_block(x) if pd.notna(x) else None)
+    else:
+        # If no inchikey column exists, set to None
+        input_compound['inchikey_fb'] = None
+
     return input_compound
