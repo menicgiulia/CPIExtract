@@ -181,6 +181,8 @@ We provide several Jupyer Notebooks to simplify the databases' download and main
 
 To operate the package, and try the examples it is necessary to have downloaded databases `.csv` and `.tsv` files either in a local directory or stored in a mySQL server as tables. The compressed preprocessed data necessary to reproduce the results in the manuscript are provided in subdirectory `data` - `Databases.zip`. This data is intended for use with the [Local Execution mode](#local-execution). Please make sure to download the `.zip` file separately and not with the whole GitHub directory.
 
+For the 2025 update of CPIExtract, the databases are now unified by InChIKey as well as CID. This allows CPIExtract to collect interactions at a purely structural or a deeper stereochemical level by match to the first block of InChIKey only or matching to the full InChIKey. Such matching especially helps when the different datasets assign their interactions to a default stereochemsitry; for example flat stereochemistry.
+
 Create a local folder, name it `data` and extract the files with the following code, which will save the databases in `data/Databases` subdirectory(Replace `/user_path_to/data/` with the appropriate path of the package in your local/remote machine):
 
   _On Linux/Mac_:
