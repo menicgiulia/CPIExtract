@@ -7,7 +7,7 @@ import io
 import requests
 
 from ..utils.typing import Connection
-from ..servers.PubchemServer import PubChemServer
+from ..servers.PubChemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
 from ..data_manager import *
 from ..utils.helper import generate_subsets
@@ -15,7 +15,8 @@ from .Database import Database
 
 class Stitch(Database):
     
-    def __init__(self, connection:Connection|None=None, database: pd.DataFrame|None=None):
+    def __init__(self,connection:Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+        super().__init__(merge_stereoisomers)
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -23,7 +24,7 @@ class Stitch(Database):
         else:
             self.data_manager = SQLManager(connection, 'Stitch')
 
-    def interactions(self, input_comp: pd.DataFrame, set_stereo: bool=True) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from Stitch database interacting with compound passed as input.
 
@@ -71,26 +72,15 @@ class Stitch(Database):
         # Create an empty Pubchem activity DataFrame
         sttch_raw = pd.DataFrame(columns=columns)
         # Drop null values of CID, to make sure the first line of the dataframe has the CID
-        input_comp = input_comp.dropna(subset=['cid']).reset_index(drop=True)
+        input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
         # Check if there are any input compounds remaining 
-        if len(input_comp) > 0:
-            # Find STITCH interactions for chemical by PubChem CID
-            # Need to convert CID into stitch id, need a set number of leading zeroes (len = 8)
-            CID = str(input_comp['cid'][0])
-            # STITCH adds prefix CIDs for specific stereochemistry
-            sttch1 = 'CIDs' + CID.zfill(8)
-            # STITCH adds prefix CIDm for unspecific stereochemistry
-            sttch2 = 'CIDm' + CID.zfill(8)
-            
-            # Merges all stereochemistries together
-            if not set_stereo: 
-                stitch_stereo = self.data_manager.retrieve_raw_data('chemical', sttch1)
-                sttch_flat = self.data_manager.retrieve_raw_data('chemical', sttch2)
-
-                sttch_raw = pd.concat([stitch_stereo,sttch_flat]).reset_index(drop=True)
-            # Only uses the select input stereochemistry
-            else: 
-                sttch_raw = self.data_manager.retrieve_raw_data('chemical', sttch1)
+        if len(input_comp) > 0:        
+            if merge_stereoisomers == True: #FirstBlock only
+                input_comp_id = input_comp['inchikey_fb'][0]
+                sttch_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
+            else: #Full inchikey
+                input_comp_id = input_comp['inchikey'][0]
+                sttch_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
         
             # Check if at least one match has been found
             if len(sttch_raw) > 0:
@@ -154,11 +144,11 @@ class Stitch(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input compound doesn\'t contain CID'
+            statement = 'Input compound does not contain CID'
         return sttch_act, statement, sttch_raw
 
 
-    def compounds(self, input_protein: pd.DataFrame, set_stereo: bool=True) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from Stitch database interacting with proteins passed as input.
 
@@ -212,10 +202,8 @@ class Stitch(Database):
             # stitch_raw = stitch_data.loc[stitch_data['protein']==input_protein_id]
 
             if len(stitch_raw) > 0:
-                if set_stereo:
-                    # Select only specific (stereochemistry) compounds, not non specific
-                    stitch_act = stitch_raw.loc[stitch_raw['chemical'].str.contains("s", case=False, na=False)].copy()
                 # Remove CIDs and CIDm strings from chemical column
+                stitch_act = stitch_raw.copy()
                 stitch_act['CID'] = stitch_act['chemical'].str.replace(r'^(CIDs|CIDm)', '', regex=True).str.lstrip('0')
                 stitch_act = stitch_act.dropna(subset=['CID'])
                 # Select only non empty cids and experimental values > 0
@@ -240,12 +228,12 @@ class Stitch(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input protein doesn\'t contain ensembl id'  
+            statement = 'Input protein does not contain ensembl id'  
 
         return stitch_c1, statement, stitch_raw
 
     
-    def _extract_ids(self, ids) -> pd.DataFrame:
+    def _extract_ids(self, ids) -> pd.DataFrame::
 
         names = ['input','value','output','taxid','species','symbol','description']
         params={
