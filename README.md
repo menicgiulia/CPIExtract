@@ -206,7 +206,7 @@ Create a local folder, name it `data` and extract the files with the following c
 Although the data used is up to date, each database periodically releases updated versions that will make the zipped data obsolete. 
 For this reason, we suggest periodically redownloading the databases to have the latest CPI information available.
 We also strongly recommend preprocessing the databases to obtain significantly faster execution times. \
-To ease this process, we provide two notebooks to download ([db_download.ipynb](db_download.ipynb)) and preprocess ([db_preprocessing.ipynb](db_preprocessing.ipynb)) the databases.
+To ease this process, we provide two notebooks to download ([db_download_2025.ipynb](db_download_2025.ipynb)) and preprocess ([db_preprocessing_2025.ipynb](db_preprocessing_2025.ipynb)) the databases.
 
 ### SQL Server
 
@@ -237,46 +237,55 @@ import os
 # Root data path
 data_path = 'data/Databases/'
 
-#Downloaded from BindingDB on 3/30/2023
-file_path=os.path.join(data_path, 'BindingDB.csv')
-BDB_data=pd.read_csv(file_path,sep=',',usecols=['CID', 'Ligand SMILES','Ligand InChI','BindingDB MonomerID','Ligand InChI Key','BindingDB Ligand Name','Target Name Assigned by Curator or DataSource','Target Source Organism According to Curator or DataSource','Ki (nM)','IC50 (nM)','Kd (nM)','EC50 (nM)','pH','Temp (C)','Curation/DataSource','UniProt (SwissProt) Entry Name of Target Chain','UniProt (SwissProt) Primary ID of Target Chain'],on_bad_lines='skip')
+#Downloaded from BindingDB on 12/8/2025
+file_path=os.path.join(data_path, 'BindingDB_Dec2025.csv')
+BDB_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
 
-#Downloaded from STITCH on 2/22/2023
-file_path=os.path.join(data_path, 'STITCH.tsv')
-sttch_data=pd.read_csv(file_path,sep='\t')
+#Downloaded from STITCH on 2/22/2023 unchanged on 12/8/2025
+file_path=os.path.join(data_path, 'STITCH.csv')
+sttch_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
 
-#Downloaded from ChEMBL on 2/01/2024
-file_path=os.path.join(data_path, 'ChEMBL.csv')
-chembl_data=pd.read_csv(file_path,sep=',')
+#Downloaded from CTD 12/8/2025
+file_path=os.path.join(data_path, 'CTD_Dec2025.csv')
+CTD_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
 
-file_path=os.path.join(data_path, 'CTD.csv')
-CTD_data=pd.read_csv(file_path,sep=',')
+#Downloaded from DTC on 2/24/2023 unchanged on 12/8/2025
+file_path=os.path.join(data_path, 'DTC_Dec2025.csv')
+DTC_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
 
-#Downloaded from DTC on 2/24/2023
-file_path=os.path.join(data_path, 'DTC.csv')
-DTC_data=pd.read_csv(file_path,sep=',',usecols=['CID', 'compound_id','standard_inchi_key','target_id','gene_names','wildtype_or_mutant','mutation_info','standard_type','standard_relation','standard_value','standard_units','activity_comment','pubmed_id','doc_type'])
+#Downloaded from DrugBank on 12/8/2025
+file_path=os.path.join(data_path, 'DB_Dec2025.csv')
+DB_data=pd.read_csv(file_path, sep=',',low_memory=False,index_col=0)
 
-#Downloaded from DrugBank on 3/2/2022
-file_path=os.path.join(data_path, 'DB.csv')
-DB_data=pd.read_csv(file_path, sep=',')
+#Downloaded from DrugCentral on 2/25/2024 unchanged on 12/8/2025
+file_path=os.path.join(data_path, 'DrugCentral_Dec2025.csv')
+DC_data=pd.read_csv(file_path, sep=',',low_memory=False,index_col=0)
 
-#Downloaded from DrugCentral on 2/25/2024
-file_path=os.path.join(data_path, 'DrugCentral.csv')
-DC_data=pd.read_csv(file_path, sep=',')
+#Downloaded from ChEMBL on 12/8/2025
+file_path=os.path.join(data_path, 'ChEMBL_Dec2025.csv')
+chembl_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
+
+#Downloaded from OTP on 2/2/2026
+file_path=os.path.join(data_path, 'OTP_Dec2025.csv')
+OTP_data=pd.read_csv(file_path, sep=',',low_memory=False,index_col=0)
 
 # Data stored in pandas dataframes
-data = {
+dbs = {
     'chembl': chembl_data,
     'bdb': BDB_data,
     'stitch': sttch_data,
     'ctd': CTD_data,
     'dtc': DTC_data,
     'db': DB_data,
-    'dc': DC_data
+    'dc': DC_data,
+    'otp': OTP_data
 }
 
-C2P = Comp2Prot(execution_mode='local', dbs=data)
-P2C = Prot2Comp(execution_mode='local', dbs=data)
+# PubChem local data stored as a duckdb file. If not present, CPIExtract will default to querying PubChem Pugrest API. 
+pubchem_files = {'db_file': '/projects/ccnr/sebek.m/CPE_data/pubchem/pubchem.duckdb'}
+
+C2P = Comp2Prot(execution_mode='local', dbs=data, pubchem_files=pubchem_files) #Only include PubChem if local copy is present
+P2C = Prot2Comp(execution_mode='local', dbs=data, pubchem_files=pubchem_files)
 ```
 
 ##### Option B: Server execution
@@ -307,10 +316,10 @@ The function `comp_interactions` from Comp2Prot accepts the following parameters
 
 - `input_id` - the compound id
 - `pChEMBL_thresh` - the minimum interaction pChEMBL value required to be added to the output file
-- `stitch_stereo` - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
-- `otp_biblio` - to select whether to include the *bibliography* data from OTP. This parameter is only available for Comp2Prot as OTP provides only known drug interactions for proteins
+- `merge_stereoisomers` - to select whether to consider the specific compound stereochemistry or group all stereoisomer interactions
 - `dtc_mutated` - to select whether also to consider interactions with mutated target proteins from DTC
 - `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
+- `verbose` - to select whether pubchem function prints processing
 
 The output will include all the interactions found and a data frame containing the statements for all the datasets for the specific input compound.
 
@@ -318,7 +327,7 @@ The output will include all the interactions found and a data frame containing t
 # Chlorpromazine InChIKey
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
-interactions, db_states = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
+interactions, db_states = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
 ```
 
 To extract interactions only from selected databases, use the alternate function specifying which databases to use in an underscore-separated string (to include all databases, which equates to using the previous function, use `'pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db'`). In the following example, only four databases are used to limit the output size.
@@ -328,17 +337,19 @@ To extract interactions only from selected databases, use the alternate function
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, otp_biblio=False, dtc_mutated=False, dc_extra=False)
+interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
 ```
 
 #### Prot2Comp
 
 Prot2Comp works similarly, with the exception that both functions only have the following additional parameters, as OTP will retrieve only known compounds interacting with the input protein:
 
+- `input_id` - the protein id
 - `pChEMBL_thresh` - the minimum interaction pChEMBL value required to be added to the output file
-- `stitch_stereo` - to select whether to consider the specific compound stereochemistry or group all stereoisomers interactions from STITCH
+- `merge_stereoisomers` - to select whether to consider the specific compound stereochemistry or group all stereoisomer interactions
 - `dtc_mutated` - to select whether also to consider interactions with mutated target proteins from DTC
 - `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
+- `verbose` - to select whether pubchem function prints processing
 
 Here are two examples demonstrating the use of the two functions from Prot2Comp:
 
@@ -346,10 +357,10 @@ Here are two examples demonstrating the use of the two functions from Prot2Comp:
 # HGNC symbol for Kallikrein-1
 prot_id = 'KLK1'
 
-interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False)
+interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, stitch_stereo=True, dtc_mutated=False, dc_extra=False)
+interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
 ```
 
 ## Package Structure
