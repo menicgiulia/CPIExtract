@@ -61,7 +61,7 @@ class DTC(Database):
         # Converts all the measured values into nM for the calculation of pChEMBL
         DTC_act = self._standard_converter(DTC_act)
         # Convert 0 and infinite values to nan
-        DTC_act['standardized_val'].replace([np.inf, 0, -np.inf], np.nan, inplace=True).infer_objects(copy=False)
+        DTC_act['standardized_val'].replace([np.inf, 0, -np.inf], np.nan).infer_objects(copy=False)
         # Remove empty values
         DTC_act = DTC_act[DTC_act['standardized_val'].notnull()]
         # Remove non-numeric characters from the Activity Value (things like > and <)
