@@ -233,8 +233,7 @@ class Stitch(Database):
         return stitch_c1, statement, stitch_raw
 
     
-    def _extract_ids(self, ids) -> pd.DataFrame::
-
+    def _extract_ids(self, ids) -> pd.DataFrame:
         names = ['input','value','output','taxid','species','symbol','description']
         params={
                 # Protein list
