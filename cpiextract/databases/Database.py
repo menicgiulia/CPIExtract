@@ -9,7 +9,7 @@ import time
 import pubchempy as pcp
 
 class Database(ABC):
-'''Template of a Database class.Loading,searching,filtering and preprocessing data from a specified database.'''
+    '''Template of a Database class.Loading,searching,filtering and preprocessing data from a specified database.'''
     def __init__(self, merge_stereoisomers=False):
         """
         Initialize database with stereoisomer matching preference.
@@ -38,7 +38,7 @@ class Database(ABC):
         raise NotImplementedError
     
     def _pubchem_search_cid(self, db_act: pd.DataFrame, columns: list[str], pc: PubChemServer) -> pd.DataFrame:
-	'''Search componds from pubchem according to CID.'''
+        '''Search componds from pubchem according to CID.'''
         # Drop null values of CID
         db_act = db_act.dropna(subset=['CID'])
         cids = db_act['CID'].astype(int).unique()
@@ -102,7 +102,7 @@ class Database(ABC):
         return db_comps
 
     def _pubchem_search_chembl(self, db_act: pd.DataFrame, id_name: str, columns: list[str], pc: PubChemServer) -> pd.DataFrame:
-	'''Retrieve compounds using compound id (chembl ids).'''
+        '''Retrieve compounds using compound id (chembl ids).'''
         pubchem_chembl = []
         existing_id = []
         inchis = []
