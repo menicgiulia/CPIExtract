@@ -96,3 +96,9 @@ class PubChemServer(metaclass=Singleton):
         compounds['Synonym'] = compounds['Synonym'].apply(lambda x: ','.join(x) if isinstance(x, list) else x)
 
         return compounds
+
+    def get_inchikey_first_block(self, inchikey):
+        #Extract the first block from InChIKey
+        if inchikey and '-' in inchikey:
+            return inchikey.split('-')[0]
+        return inchikey
