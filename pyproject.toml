@@ -31,7 +31,8 @@ dependencies = [
     "biomart>=0.9.2",
     "chembl_webresource_client>=0.10.8",
     "pubchempy>=1.0.4",
-    "tqdm>=4.65.0"
+    "tqdm>=4.65.0",
+    "mygene>=3.2.2"
 ]
 
 [project.optional-dependencies]
