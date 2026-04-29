@@ -86,6 +86,12 @@ def protein_identifiers(input_id: int | str, gene_server=None, server_select='my
     hgnc_protein = ensembl.search(inputtype, input_id, attributes, columns)
     input_protein = pd.concat([input_protein, hgnc_protein], axis=1) 
 
+    # HGNC data is gene-level (one value) — fill down to all peptide rows
+    hgnc_cols = ['hgnc_symbol', 'gene_type', 'description', 'hgnc_id']
+    for col in hgnc_cols:
+        if col in input_protein.columns:
+            input_protein[col] = input_protein[col].ffill()
+    
     return input_protein
 
 
