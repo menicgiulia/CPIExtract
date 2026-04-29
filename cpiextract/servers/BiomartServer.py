@@ -1,4 +1,4 @@
-'''The server to perform Biomart requests.'''
+'''Gene identifier harmonization via BioMart.'''
 
 import biomart
 import pandas as pd
