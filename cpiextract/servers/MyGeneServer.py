@@ -44,6 +44,11 @@ class MyGeneServer(metaclass=Singleton):
         'gene_type':     'type_of_gene',
         'gene_biotype':  'type_of_gene',
         'hgnc_symbol':   'symbol',
+        'chembl':            'chembl',
+        'ensembl_peptide_id':'ensembl.protein',
+        'ensembl_gene_id':   'ensembl.gene',   
+        'hgnc_id':           'HGNC', 
+        'uniprot':           'uniprot.Swiss-Prot',
         'description':   'name',
     }
 
@@ -56,6 +61,42 @@ class MyGeneServer(metaclass=Singleton):
             # BioMart passes 'HGNC:12679'; MyGene expects '12679'
             return [i.replace('HGNC:', '') if isinstance(i, str) else i for i in input_ids]
         return list(input_ids)
+
+    def _extract_field(self, hit: dict, mygene_field: str):
+        '''
+        Extract a field value from a MyGene hit, handling nested dicts for
+        ensembl (ensembl.protein, ensembl.gene) and uniprot (uniprot.Swiss-Prot).
+        When a field returns a list (e.g. multiple Ensembl IDs), returns the first.
+        '''
+        if mygene_field == 'ensembl.protein':
+            ensembl = hit.get('ensembl', {})
+            if isinstance(ensembl, list):
+                ensembl = ensembl[0]
+            val = ensembl.get('protein') if isinstance(ensembl, dict) else None
+
+        elif mygene_field == 'ensembl.gene':
+            ensembl = hit.get('ensembl', {})
+            if isinstance(ensembl, list):
+                ensembl = ensembl[0]
+            val = ensembl.get('gene') if isinstance(ensembl, dict) else None
+
+        elif mygene_field == 'uniprot.Swiss-Prot':
+            uniprot = hit.get('uniprot', {})
+            val = uniprot.get('Swiss-Prot') if isinstance(uniprot, dict) else None
+
+        elif mygene_field == 'type_of_gene':
+            val = hit.get('type_of_gene')
+            if val == 'protein-coding':
+                val = 'protein_coding'
+
+        else:
+            val = hit.get(mygene_field)
+
+        # If MyGene returns a list for a field, take the first element
+        if isinstance(val, list):
+            val = val[0] if val else None
+
+        return val
 
     def _hits_to_dataframe(self, hits: list, input_type: str,
                            original_ids: list, column_names: list) -> pd.DataFrame:
@@ -81,12 +122,7 @@ class MyGeneServer(metaclass=Singleton):
                     record[col] = None
                     continue
 
-                val = hit.get(mygene_field)
-
-                # Normalize gene type: MyGene uses 'protein-coding', BioMart used 'protein_coding'
-                if mygene_field == 'type_of_gene' and val == 'protein-coding':
-                    val = 'protein_coding'
-                record[col] = val
+                record[col] = self._extract_field(hit, mygene_field)
 
             records.append(record)
 
@@ -117,7 +153,7 @@ class MyGeneServer(metaclass=Singleton):
                 hits = self.mg.querymany(
                     normalized,
                     scopes=scope,
-                    fields='entrezgene,type_of_gene,symbol,name',
+                    fields='entrezgene,type_of_gene,symbol,name,chembl,ensembl,HGNC,uniprot',
                     species='human',
                     returnall=False,
                     verbose=False,
