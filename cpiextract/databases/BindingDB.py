@@ -3,18 +3,31 @@
 import numpy as np
 import pandas as pd
 import re
-from ..servers.BiomartServer import BiomartServer
+import time
+
+from ..utils.typing import Connection
 from ..servers.PubChemServer import PubChemServer
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
 from .Database import Database
 from ..data_manager import *
-from ..utils.typing import Connection
-import time
 
 class BindingDB(Database):
     '''Loading,searching,filtering and preprocessing data from BindingDB.'''
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+        
        # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -104,7 +117,6 @@ class BindingDB(Database):
         bdb_act=bdb_act.loc[bdb_act['pchembl_value'] > pChEMBL_thres].reset_index(drop=True) 
 
         return bdb_act
-                
 
 
     def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
@@ -119,8 +131,6 @@ class BindingDB(Database):
             - Temp(°C) < 40 or null
             - 5 < pH < 9 or null
         - Uses activity columns to compute all possible pchembl values.
-        - Uses Biomart to obtain proteins info (modified with data from original bdb database) to return,
-        searching with uniprotswissprot ID.
         
         Parameters
         ----------
@@ -128,6 +138,8 @@ class BindingDB(Database):
             dictionary of input compound data from which interacting proteins are found
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
             
         Returns
         -------
@@ -165,8 +177,9 @@ class BindingDB(Database):
                 bdb_act = self._compute_pchembl(bdb_filt, pChEMBL_thres)
                 
                 if len(bdb_act) > 0:
-                    # Unify gene identifiers by Converting BindingDB with biomart
-                    ensembl = BiomartServer()
+                    # Unify gene identifiers by Harmonizing IDs
+                    ensembl = self.gene_server
+
                     # BindingDB uses Uniprot IDs
                     input_type='uniprotswissprot' 
                     attributes = ['uniprotswissprot', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
@@ -177,7 +190,7 @@ class BindingDB(Database):
                     
                     bdb_targets = ensembl.subset_search(input_type, input_genes, attributes, names)
     
-                    # For each protein, assign specific biomart column values to the ones from the original bdb database
+                    # For each compound, assign protein query column values to the ones from the original database
                     for index, row in bdb_act.iterrows():
                         # Find the compound using uniprot
                         S1 = bdb_targets.loc[bdb_targets['uniprot'] == row['UniProt (SwissProt) Primary ID of Target Chain']]
@@ -186,12 +199,13 @@ class BindingDB(Database):
                             bdb_act.loc[index, 'gene_type'] = S1['gene_type'].iloc[0]
                             bdb_act.loc[index, 'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                             bdb_act.loc[index, 'description'] = S1['description'].iloc[0]
+                            bdb_act.loc[index, 'note'] ='Harmonized gene ID'
                         else:
                             bdb_act.loc[index, 'entrez'] = None
                             bdb_act.loc[index, 'gene_type'] = None
                             bdb_act.loc[index, 'hgnc_symbol'] = None
                             bdb_act.loc[index, 'description'] = None
-                            Des='Failed to convert the gene ID'
+                            bdb_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                     bdb_act['datasource'] = 'BindingDB'
                     statement = 'completed'
                 else:
@@ -199,7 +213,7 @@ class BindingDB(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input compound doesn\'t contain inchi key'
+            statement = 'Input compound does not contain inchi key'
 
         return bdb_act, statement, bdb_raw
     
@@ -308,6 +322,6 @@ class BindingDB(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Input protein doesn\'t contain uniprot id'
+            statement = 'Input protein does not contain uniprot id'
             
         return bdb_c1, statement, bdb_raw

@@ -2,19 +2,30 @@
 
 import numpy as np
 import pandas as pd
-
-from ..utils.typing import Connection
-from ..servers.BiomartServer import BiomartServer
-from ..servers.PubChemServer import PubChemServer
-from .Database import Database
-from ..data_manager import *
 import time
 
+from ..utils.typing import Connection
+from ..servers.PubChemServer import PubChemServer
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
+from .Database import Database
+from ..data_manager import *
 
 class DrugCentral(Database):
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -48,7 +59,8 @@ class DrugCentral(Database):
 
         return dc_act
 
-    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, 
+                     merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from DrugCentral database interacting with compound passed as input.
 
@@ -61,8 +73,6 @@ class DrugCentral(Database):
             - Action Type must not be: PHARMACOLOGICAL CHAPERONE, RELEASING AGENT
             - Target Class must not be: CD molecules, RNA, Unclassified, Viral envelope protein, Polyprotein
         - Uses activity column to compute pchembl values.
-        - Uses Biomart to obtain proteins info (modified with data from original dc database) to return,
-        searching with UniProt ID.
         
         Parameters
         ----------
@@ -72,7 +82,9 @@ class DrugCentral(Database):
             bool to select whether to include possibly non-Homo sapiens interactions
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
-            
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound  
+
         Returns
         -------
         DataFrame
@@ -106,8 +118,9 @@ class DrugCentral(Database):
                 dc_act = self._compute_pchembl(dc_filt, pChEMBL_thres)
                 
                 if len(dc_act) > 0:
-                    # Unify gene identifiers by Converting BindingDB with biomart
-                    ensembl = BiomartServer()
+                    # Unify gene identifiers by Harmonizing IDs
+                    ensembl = self.gene_server
+
                     # BindingDB uses Uniprot IDs
                     input_type='uniprotswissprot' 
                     attributes = ['uniprotswissprot', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
@@ -127,12 +140,13 @@ class DrugCentral(Database):
                             dc_act.loc[index, 'gene_type'] = S1['gene_type'].iloc[0]
                             dc_act.loc[index, 'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                             dc_act.loc[index, 'description'] = S1['description'].iloc[0]
+                            dc_act.loc[index, 'note'] ='Harmonized gene ID'
                         else:
                             dc_act.loc[index, 'entrez'] = None
                             dc_act.loc[index, 'gene_type'] = None
                             dc_act.loc[index, 'hgnc_symbol'] = None
                             dc_act.loc[index, 'description'] = None
-                            Des='Failed to convert the gene ID'
+                            dc_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                     dc_act['datasource'] = 'DrugCentral'
                     statement = 'completed'
                 else:
@@ -145,7 +159,8 @@ class DrugCentral(Database):
         return dc_act, statement, dc_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, 
+                  merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from DrugCentral database interacting with proteins passed as input.
 
@@ -173,8 +188,12 @@ class DrugCentral(Database):
         Returns
         -------
         DataFrame
-            Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (DrugCentral), pchembl_value, notes (activity type)
+            Dataframe of interacting proteins, containing the following values: \\
+            entrez, gene_type, hgnc_symbol, description, datasource (DrugCentral), pchembl_value
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all DrugCentral info about the input compound
         """
 
         columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']

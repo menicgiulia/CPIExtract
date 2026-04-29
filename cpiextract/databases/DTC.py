@@ -4,16 +4,28 @@ import pandas as pd
 import numpy as np
 
 from ..utils.typing import Connection
-from ..servers.BiomartServer import BiomartServer
-from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..servers.PubChemServer import PubChemServer
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
+from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from .Database import Database
 from ..data_manager import *
 
 class DTC(Database):
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -76,7 +88,8 @@ class DTC(Database):
         return DTC_act
             
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, dtc_mutated: bool=False, 
+                     pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
 
         """
         Retrieves proteins from DTC database interacting with compound passed as input.
@@ -95,8 +108,6 @@ class DTC(Database):
             - No inconclusive and undetermined activities
             - No mutated data \\
         - Applies a standard conversion for all values required to compute pChembl, removing non valid values.
-        - Uses Biomart to obtain proteins info (modified with data from original DTC database) to return,
-        searching with uniprotswissprot.
         
         Parameters
         ----------
@@ -110,6 +121,8 @@ class DTC(Database):
             bool to select whether to included mutated targets interactions
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
         
         Returns
         -------
@@ -160,8 +173,9 @@ class DTC(Database):
                 
             # Note: DTC has no tax_id or species column, can only filter for human via biomart conversion
             if len(DTC_act) > 0:
-                # Unify gene identifiers by Converting DTC with biomart
-                ensembl = BiomartServer()
+                # Unify gene identifiers by Harmonizing IDs
+                ensembl = self.gene_server
+
                 attributes = ['uniprotswissprot', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
                 names = ['uniprot','entrez','gene_type','hgnc_symbol','description']
                 # Search by uniprot id match to biomart
@@ -181,12 +195,13 @@ class DTC(Database):
                         DTC_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                         DTC_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                         DTC_act.loc[index,'description'] = S1['description'].iloc[0]
+                        DTC_act.loc[index, 'note'] ='Harmonized gene ID'
                     else:
                         DTC_act.loc[index, 'entrez'] = None
                         DTC_act.loc[index, 'gene_type'] = None
                         DTC_act.loc[index, 'hgnc_symbol'] = None
                         DTC_act.loc[index, 'description'] = None  
-                        Des='Failed to convert the gene ID'
+                        DTC_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                 DTC_act['datasource']='DTC'
                 statement='completed'
             else:
@@ -197,7 +212,8 @@ class DTC(Database):
         return DTC_act, statement, DTC_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_protein: pd.DataFrame, dtc_mutated: bool=False, pChEMBL_thres: float=0, 
+                  merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
 
         """
         Retrieves compounds from DTC database interacting with proteins passed as input.

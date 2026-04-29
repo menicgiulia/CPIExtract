@@ -6,15 +6,27 @@ import time
 
 from ..utils.typing import Connection
 from collections import defaultdict
-from ..servers.BiomartServer import BiomartServer
 from ..servers.PubChemServer import PubChemServer
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
 from ..data_manager import *
 from .Database import Database
 
 class DB(Database):
     '''Loading,searching,filtering and preprocessing data from DrugBank.'''
 
-    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
+        
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         super().__init__(merge_stereoisomers)
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
@@ -35,31 +47,23 @@ class DB(Database):
         - Finds all proteins (targets, enzymes, carriers, transporters) interacting with input compound. \\
         Constraints:
             - Only Homo Sapiens interactions \\
-        - Uses Biomart to obtain proteins info (modified with data from original DB database) to return,
-        searching with GeneID.
         
         Parameters
         ----------
         DB_data : DataFrame
             Dataframe containing all DrugBank database info
-            
         input_comp : DataFrame
             Dataframe of input compounds from which interacting proteins are found
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
 
         Returns
         -------
         DataFrame
-            Dataframe of interacting proteins, containing the following values:
-            - entrez
-            - gene_type
-            - hgnc_symbol
-            - description
-            - datasource (DrugBank)
-            - pchembl_value (nan)
-
+            Dataframe of interacting proteins, containing the following values: \\
+            entrez, gene_type, hgnc_symbol, description, datasource (DB), pchembl_value
         String
             A statement string describing the outcome of the database search
-
         DataFrame
             Raw Dataframe containing all DrugBank info about the input compound
         """
@@ -97,8 +101,9 @@ class DB(Database):
 
                 # Check if at least one interaction has been found
                 if len(DB_act) > 0:
-                    # Unify gene identifiers by Converting DrugBank with Biomart
-                    ensembl = BiomartServer()
+                    # Unify gene identifiers by Harmonizing IDs
+                    ensembl = self.gene_server
+
                     # Search by hgnc id match to biomart
                     input_type='hgnc_id' 
                     names=['hgnc_id','entrez','gene_type','hgnc_symbol','description']
@@ -111,6 +116,8 @@ class DB(Database):
                     db_targets = ensembl.subset_search(input_type, input_genes, attributes, names)
                         
                     # For each compound, assign specific biomart column values to the ones from the original DrugBank database
+                    db_targets['hgnc_id']=db_targets['hgnc_id'].astype(str)
+                    DB_act['HGNC']=DB_act['HGNC'].str.replace('HGNC:','',regex=False)
                     for index, row in DB_act.iterrows():
                         S1 = db_targets.loc[db_targets['hgnc_id']==row['HGNC']]
                         if len(S1) > 0:
@@ -118,12 +125,13 @@ class DB(Database):
                             DB_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                             DB_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                             DB_act.loc[index,'description'] = S1['description'].iloc[0]
+                            DB_act.loc[index, 'note'] ='Harmonized gene ID'
                         else:
                             DB_act.loc[index, 'entrez'] = None
                             DB_act.loc[index, 'gene_type'] = None
                             DB_act.loc[index, 'hgnc_symbol'] = None
                             DB_act.loc[index, 'description'] = None  
-
+                            DB_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                         DB_act['datasource'] = 'DrugBank'
                         DB_act['pchembl_value'] = np.nan
                         statement = 'completed'
@@ -161,7 +169,11 @@ class DB(Database):
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (db), pchembl_value (nan), notes (nan)
+            inchi, inchikey, isomeric_smiles, iupac_name, datasource (db), pchembl_value, notes (activity type)
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all DrugBank info about the protein
         """
 
         columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']

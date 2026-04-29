@@ -9,17 +9,28 @@ import duckdb
 import os
 
 from ..utils.typing import Connection
-from ..servers.BiomartServer import BiomartServer
 from ..servers.PubChemServer import PubChemServer
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
 from ..data_manager import *
 from ..utils.helper import generate_subsets
 from .Database import Database
 
 class PubChem(Database):
 
-    def __init__(self, connection: Connection| None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False,
-                 bioact_file=None):
+    def __init__(self, connection: Connection| None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, bioact_file=None, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         if connection is not None or database is not None:
             raise ValueError('No SQL connection or database expected for Pubchem')
     
@@ -31,8 +42,7 @@ class PubChem(Database):
             if bioact_file.endswith('.duckdb'):
                 self.db_file = bioact_file
             else:
-                # Derive .duckdb path from .tsv.gz path
-                self.db_file = bioact_file.replace('pc_bioactivities.tsv.gz', 'pubchem.duckdb')
+                self.db_file = None
         
             self.use_local = os.path.exists(self.db_file)
     
@@ -76,10 +86,39 @@ class PubChem(Database):
 
         return pubchem_filt
 
-    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0, merge_stereoisomers: bool=False, verbose: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0, 
+                     merge_stereoisomers: bool=False, verbose: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
-        Retrieves proteins from PubChem interacting with compound passed as input.
-        Uses local database when available, API otherwise.
+        Retrieves proteins from pubchem database interacting with compound passed as input.
+
+        Steps
+        -----
+        - Filters database to obtain proteins interacting with input compound \\
+        Constraints:
+            - Only Homo Sapiens interactions
+            - Activity Outcome must be specified
+            - Activity unit is convertible to pchembl value.
+        
+        Parameters
+        ----------
+        input_comp : dictionary
+            dictionary of input compound data from which interacting proteins are found
+        pChEMBL_thres : float
+            minimum pChEMBL value necessary for interaction to be considered valid
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
+        verbose : bool
+            states whether API or Local file is in use
+            
+        Returns
+        -------
+        DataFrame
+            Dataframe of interacting proteins, containing the following values: \\
+            entrez, gene_type, hgnc_symbol, description, datasource (pc), pchembl_value
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all PubChem info about the input compound
         """
 
         # Print database info if verbose
@@ -102,7 +141,7 @@ class PubChem(Database):
             firstblock = input_comp['inchikey_fb'][0]
         
             # Try local database first
-            if self.use_local:  # CHANGED: removed "and self.cid_inchikey_file"
+            if self.use_local:
                 cid_list = self._get_cids_from_firstblock(firstblock)
                 if cid_list is None:  # Database error, use API
                     try:
@@ -200,8 +239,8 @@ class PubChem(Database):
             except Exception as e:
                 pubchem_act['inchikey'] = None
 
-        # Get gene annotations from Biomart
-        ensembl = BiomartServer()
+        # Unify gene identifiers by Harmonizing IDs
+        ensembl = self.gene_server
         input_type = 'entrezgene_id' 
         attributes = ['entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
         names = ['entrez','gene_type','hgnc_symbol','description']
@@ -210,21 +249,24 @@ class PubChem(Database):
         input_genes = [int(i) for i in genelist]
 
         pubchem_targets = ensembl.subset_search(input_type, input_genes, attributes, names)
-
-        # Merge biomart data
+        
+        # For each compound, assign protein query column values to the ones from the original database
+        pubchem_targets['entrez']=pubchem_targets['entrez'].astype(str)
+        pubchem_act['Target GeneID']=pubchem_act['Target GeneID'].astype(str)
         for index, row in pubchem_act.iterrows():
-            S1 = pubchem_targets.loc[pubchem_targets['entrez']==int(row['Target GeneID'])]
+            S1 = pubchem_targets.loc[pubchem_targets['entrez']==row['Target GeneID']]
             if len(S1) > 0:
                 pubchem_act.loc[index,'entrez'] = S1['entrez'].iloc[0]
                 pubchem_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                 pubchem_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                 pubchem_act.loc[index,'description'] = S1['description'].iloc[0]
+                pubchem_act.loc[index, 'note'] ='Harmonized gene ID'
             else:
                 pubchem_act.loc[index,'entrez'] = None
                 pubchem_act.loc[index,'gene_type'] = None
                 pubchem_act.loc[index,'hgnc_symbol'] = None
                 pubchem_act.loc[index,'description'] = None
-        
+                pubchem_act.loc[index, 'note'] ='Failed to harmonize gene ID'
         pubchem_act['datasource'] = 'PubChem'
 
         return pubchem_act, statement, pubchem_raw
@@ -304,10 +346,35 @@ class PubChem(Database):
 
         return pubchem_raw
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0, merge_stereoisomers: bool=False, verbose: bool=False):
+    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0, 
+                  merge_stereoisomers: bool=False, verbose: bool=False):
         """
-        Retrieves compounds from PubChem interacting with proteins passed as input.
-        Returns basic compound info - additional metadata can be added in postprocessing.
+        Retrieves compounds from pubchem database interacting with proteins passed as input.
+
+        Steps
+        -----
+        - Filters database to obtain proteins interacting with input compound \\
+        Constraints:
+            - Only Homo Sapiens interactions
+            - Activity Outcome must be specified
+            - Activity unit is convertible to pchembl value.
+        
+        Parameters
+        ----------
+        input_protein : DataFrame
+            Dataframe of input proteins from which interacting compound are found
+        pChEMBL_thres : float
+            minimum pChEMBL value necessary for interaction to be considered valid
+
+        Returns
+        -------
+        DataFrame
+            Dataframe of interacting compounds, containing the following values: \\
+            inchi, inchikey, isomeric_smiles, iupac_name, datasource (pc), pchembl_value, notes (activity type)
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all PubChem info about the protein
         """
         
         # Print database info if verbose

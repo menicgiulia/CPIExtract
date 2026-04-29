@@ -7,29 +7,27 @@ import time
 import json
 
 from ..utils.typing import Connection
-from ..servers.BiomartServer import BiomartServer
-from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..servers.PubChemServer import PubChemServer
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
+from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..data_manager import *
 from .Database import Database
 
 class OTP(Database):
 
-    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, chembl_database:pd.DataFrame|None=None, merge_stereoisomers=False):
-        """
-        Initialize OTP database.
-    
-        Parameters
-        ----------
-        database : pd.DataFrame, optional
-            Preprocessed OTP DataFrame with columns: chemblIds, targets, targetName,
-            inchikey, FirstBlock, CID. If provided, will use local data instead of API.
-        chembl_database : pd.DataFrame, optional
-            Local ChEMBL database for faster lookups
-        merge_stereoisomers : bool
-            Whether to merge stereoisomers
-        """
+    def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, chembl_database:pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
     
         # OTP uses either local DataFrame or API (no SQL connection)
         if connection is not None:
@@ -49,7 +47,8 @@ class OTP(Database):
             }
             self.data_manager = APIManager(funcs)
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, 
+                     merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from OTP interacting with compound passed as input.
 
@@ -66,7 +65,7 @@ class OTP(Database):
         chembl_ids : list
             list of chembl ids for the input compounds
         merge_stereoisomers : bool
-            Whether to merge stereoisomers
+            determines if results respect stereochemical specificity of input compound
             
         Returns
         -------
@@ -135,8 +134,8 @@ class OTP(Database):
                             if 'CID' not in otp_act.columns:
                                 otp_act['CID'] = None
 
-                        # Convert OTP targets using Biomart
-                        ensembl = BiomartServer()
+                        # Unify gene identifiers by Harmonizing IDs
+                        ensembl = self.gene_server
                         attributes = ['ensembl_gene_id', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
                         names = ['ensembl_id','entrez','gene_type','hgnc_symbol','description']
                         input_type = 'ensembl_gene_id'
@@ -152,12 +151,13 @@ class OTP(Database):
                                 otp_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                                 otp_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                                 otp_act.loc[index,'description'] = S1['description'].iloc[0]
+                                otp_act.loc[index, 'note'] ='Harmonized gene ID'
                             else:
                                 otp_act.loc[index,'entrez'] = None
                                 otp_act.loc[index,'gene_type'] = None
                                 otp_act.loc[index,'hgnc_symbol'] = None
                                 otp_act.loc[index,'description'] = None
-                        
+                                otp_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                         otp_act['datasource'] = 'OTP'
                         otp_act['pchembl_value'] = np.nan
                         statement = 'completed'
@@ -221,8 +221,8 @@ class OTP(Database):
                             otp_act['inchikey'] = None
                             otp_act['CID'] = None
 
-                        # Convert OTP targets using Biomart
-                        ensembl = BiomartServer()
+                        # Unify gene identifiers by Harmonizing IDs
+                        ensembl = self.gene_server
                         attributes = ['ensembl_gene_id', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
                         names = ['ensembl_id','entrez','gene_type','hgnc_symbol','description']
                         input_type = 'ensembl_gene_id'
@@ -238,12 +238,13 @@ class OTP(Database):
                                 otp_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                                 otp_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                                 otp_act.loc[index,'description'] = S1['description'].iloc[0]
+                                otp_act.loc[index, 'note'] ='Harmonized gene ID'
                             else:
                                 otp_act.loc[index,'entrez'] = None
                                 otp_act.loc[index,'gene_type'] = None
                                 otp_act.loc[index,'hgnc_symbol'] = None
                                 otp_act.loc[index,'description'] = None
-                        
+                                otp_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                         otp_act['datasource'] = 'OTP'
                         otp_act['pchembl_value'] = np.nan
                         statement = 'completed'

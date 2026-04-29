@@ -2,21 +2,33 @@
 
 import pandas as pd
 import numpy as np
+import re
 
 from ..utils.typing import Connection
 from chembl_webresource_client.new_client import new_client
+from ..servers.PubChemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
-from ..servers.PubChemServer import PubChemServer 
+from ..servers.MyGeneServer import MyGeneServer
 from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from .Database import Database
 from ..data_manager import *
-import re
 
 class ChEMBL(Database):
     '''Loading,searching,filtering and preprocessing data from ChEMBL.'''
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         if database is not None:
             self.data_manager = LocalManager(database)
         elif connection is not None:
@@ -88,18 +100,14 @@ class ChEMBL(Database):
             Empty list that will contain all ChEMBL ids found for the input compound
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
 
         Returns
         -------
         DataFrame
-            Dataframe of interacting proteins, containing the following values:
-            - entrez 
-            - gene_type 
-            - hgnc_symbol 
-            - description 
-            - datasource (ChEMBL) 
-            - pchembl_value
-
+            Dataframe of interacting proteins, containing the following values: \\
+            entrez, gene_type, hgnc_symbol, description, datasource (chembl), pchembl_value
         String
             A statement string describing the outcome of the database search
         DataFrame
@@ -144,38 +152,40 @@ class ChEMBL(Database):
 
                 # Keep only relevant columns
                 chembl_act = chembl_act[['Molecule ChEMBL ID', 'inchikey', 'CID', 'Comment', 'Data Validity Comment', 'Target Organism',
-                                         'Source ID', 'pChEMBL Value', 'Target ChEMBL ID', 'Target Type']]
+                                         'Source ID', 'pChEMBL Value', 'Target ChEMBL ID', 'Target Type','uniprot']]
                 # Only use int. w/proteins, removes cell lines and RNA
                 chembl_act = chembl_act.loc[chembl_act['Target Type']=='SINGLE PROTEIN'] 
                 chembl_act = chembl_act.rename(columns={'pChEMBL Value': 'pchembl_value'}).reset_index(drop=True)
                     
                 if len(chembl_act) > 0:
-                    # Unify gene identifiers by Converting ChEMBL with biomart
-                    ensembl = BiomartServer()
+                    # Unify gene identifiers by Harmonizing IDs
+                    ensembl = self.gene_server
+
                     # ChEMBL uses chembl ids
-                    input_type='chembl' 
-                    attributes = ['chembl', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
-                    names = ['chembl','entrez','gene_type','hgnc_symbol','description']
+                    input_type='uniprotswissprot' 
+                    attributes = ['uniprotswissprot', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
+                    names = ['uniprot','entrez','gene_type','hgnc_symbol','description']
                     chembl_targets=pd.DataFrame(columns=names)
                     
-                    input_genes=list(chembl_act['Target ChEMBL ID'])
+                    input_genes=list(chembl_act['uniprot'])
                         
                     chembl_targets=ensembl.subset_search(input_type, input_genes, attributes, names)
 
                     # For each compound, assign specific biomart column values to the ones from the original chembl database
                     for index, row in chembl_act.iterrows():
-                        S1 = chembl_targets.loc[chembl_targets['chembl']==row['Target ChEMBL ID']]
+                        S1 = chembl_targets.loc[chembl_targets['uniprot']==row['uniprot']]
                         if len(S1) > 0:
                             chembl_act.loc[index, 'entrez'] = S1['entrez'].iloc[0]
                             chembl_act.loc[index, 'gene_type'] = S1['gene_type'].iloc[0]
                             chembl_act.loc[index, 'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                             chembl_act.loc[index, 'description'] = S1['description'].iloc[0]
+                            chembl_act.loc[index, 'note'] ='Harmonized gene ID'
                         else:
                             chembl_act.loc[index, 'entrez'] = None
                             chembl_act.loc[index, 'gene_type'] = None
                             chembl_act.loc[index, 'hgnc_symbol'] = None
                             chembl_act.loc[index, 'description'] = None  
-                            Des='Failed to convert the gene ID'
+                            chembl_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                     chembl_act['datasource'] = 'ChEMBL'
                     statement = 'completed'
                 else:
@@ -214,14 +224,12 @@ class ChEMBL(Database):
         Returns
         -------
         DataFrame
-            Dataframe of interacting compounds, containing the following values:
-            - inchi
-            - inchikey
-            - isomeric smiles
-            - iupac name
-            - datasource (ChEMBL)
-            - pchembl value
-            - notes (NaN)
+            Dataframe of interacting compounds, containing the following values: \\
+            inchi, inchikey, isomeric_smiles, iupac_name, datasource (BindingDB), pchembl_value, notes (activity type)
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all BindingDB info about the protein
         """
 
         columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
@@ -250,7 +258,7 @@ class ChEMBL(Database):
                         compounds = self._pubchem_search_cid(chembl_act, columns, pc)
                         
                         if len(compounds) > 0:
-                            chembl_info = chembl_act[['CID', 'Molecule ChEMBL ID', 'pChEMBL Value', 'Target ChEMBL ID']].\
+                            chembl_info = chembl_act[['CID', 'Molecule ChEMBL ID', 'pChEMBL Value', 'Target ChEMBL ID','uniprot']].\
                                             rename(columns={'Molecule ChEMBL ID': 'id', 'pChEMBL Value': 'pchembl_value', 
                                                             'Target ChEMBL ID': 'target_chembl_id'}).drop_duplicates()
                             chembl_c1 = pd.merge(compounds, chembl_info, on='CID', how='left')
@@ -261,7 +269,7 @@ class ChEMBL(Database):
 
                         if len(compounds) > 0:
                             # Update pchembl value with that of filtered compounds
-                            chembl_info = chembl_act[['Molecule ChEMBL ID', 'pChEMBL Value', 'Target ChEMBL ID']].\
+                            chembl_info = chembl_act[['Molecule ChEMBL ID', 'pChEMBL Value', 'Target ChEMBL ID','uniprot']].\
                                             rename(columns={'Molecule ChEMBL ID': 'id', 'pChEMBL Value': 'pchembl_value', 
                                                             'Target ChEMBL ID': 'target_chembl_id'}).drop_duplicates()
                             chembl_c1 = pd.merge(compounds, chembl_info, on='id', how='left')
@@ -301,24 +309,53 @@ class ChEMBL(Database):
             return chembl_raw
     
     def _retrieve_target_type(self, chembl_act: pd.DataFrame) -> pd.DataFrame:
-        # Filter ChEMBL based on target_type, looking to only use proteins
         target = new_client.target
-        dat = []
-        # Use the chembl webresource client to find target_type
-        for _, row in chembl_act.iterrows(): 
-            res = target.filter(target_chembl_id=row['Target ChEMBL ID']).only(['target_type'])
-            dat.append(res[0]['target_type'])
-        chembl_act['Target Type'] = dat
+        target_types = []
+        uniprots = []
+
+        for _, row in chembl_act.iterrows():
+            res = target.filter(target_chembl_id=row['Target ChEMBL ID'])\
+                        .only(['target_type', 'target_components'])
+        
+            target_types.append(res[0]['target_type'])
+        
+            # Extract UniProt accession from target_components
+            components = res[0].get('target_components', [])
+            accession = None
+            for comp in components:
+                for xref in comp.get('target_component_xrefs', []):
+                    if xref.get('xref_src_db') == 'UniProt':
+                        accession = xref.get('xref_id')
+                        break
+                if accession:
+                    break
+            uniprots.append(accession)
+
+        chembl_act['Target Type'] = target_types
+        chembl_act['uniprot'] = uniprots
 
         return chembl_act
 
     def _retrieve_proteins(self, input_protein_id) -> pd.DataFrame:
-        # Use package of Chembl API to get the compound that have an activity with the protein
         activities = new_client.activity.filter(target_chembl_id=input_protein_id)\
-                    .only(['molecule_chembl_id','activity_comment','data_validity_comment','target_tax_id',\
-                            'src_id','pchembl_value','target_chembl_id'])
-        # Create dataframe from API output
+                    .only(['molecule_chembl_id', 'activity_comment', 'data_validity_comment',
+                           'target_tax_id', 'src_id', 'pchembl_value', 'target_chembl_id'])
         chembl_raw = pd.DataFrame.from_dict(activities)
         chembl_raw = chembl_raw.rename(columns=self.column_names)
+
+        # Fetch UniProt for this target
+        target = new_client.target
+        res = target.filter(target_chembl_id=input_protein_id)\
+                    .only(['target_components'])
+        accession = None
+        if res:
+            for comp in res[0].get('target_components', []):
+                for xref in comp.get('target_component_xrefs', []):
+                    if xref.get('xref_src_db') == 'UniProt':
+                        accession = xref.get('xref_id')
+                        break
+                if accession:
+                    break
+        chembl_raw['uniprot'] = accession
 
         return chembl_raw

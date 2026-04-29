@@ -6,13 +6,25 @@ import numpy as np
 from ..utils.typing import Connection
 from ..servers.PubChemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
 from .Database import Database
 from ..data_manager import *
 
 class CTD(Database):
 
-    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -41,8 +53,6 @@ class CTD(Database):
             - Only Homo Sapiens interactions
             - Only ligand-protein binding
             - Only protein interactions
-        - Uses Biomart to obtain proteins info (modified with data from from original CTD database) to return,
-        searching with GeneID.
         
         Parameters
         ----------
@@ -50,18 +60,14 @@ class CTD(Database):
             Dataframe containing all CTD database info
         input_comp : DataFrame
             Dataframe of input compounds from which interacting proteins are found
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
 
         Returns
         -------
         DataFrame
-        DataFrame
-            Dataframe of interacting proteins, containing the following values:
-            - entrez 
-            - gene_type 
-            - hgnc_symbol 
-            - description 
-            - datasource (CTD) 
-            - pchembl_value (NaN)
+            Dataframe of interacting proteins, containing the following values: \\
+            entrez, gene_type, hgnc_symbol, description, datasource (CTD), pchembl_value
         String
             A statement string describing the outcome of the database search
         DataFrame
@@ -88,8 +94,9 @@ class CTD(Database):
                 
                 # Check if at least one interaction has been found
                 if len(CTD_act) > 0:
-                    # Unify gene identifiers by Converting CTD with Biomart
-                    ensembl = BiomartServer()
+                    # Unify gene identifiers by Harmonizing IDs
+                    ensembl = self.gene_server
+                    
                     attributes = ['entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
                     names = ['entrez','gene_type','hgnc_symbol','description']
                     # Use entrez for conversion
@@ -101,20 +108,23 @@ class CTD(Database):
                     
                     ctd_targets=ensembl.subset_search(input_type, input_genes, attributes, names)
 
-                    # For each compound, assign specific biomart column values to the ones from the original CTD database
+                    # For each compound, assign protein query column values to the ones from the original database
+                    ctd_targets['entrez']=ctd_targets['entrez'].astype(str)
+                    CTD_act['GeneID']=CTD_act['GeneID'].astype(str)
                     for index, row in CTD_act.iterrows():
-                        S1 = ctd_targets.loc[ctd_targets['entrez']==int(row['GeneID'])]
+                        S1 = ctd_targets.loc[ctd_targets['entrez']==row['GeneID']]
                         if len(S1) > 0:
                             CTD_act.loc[index,'entrez'] = S1['entrez'].iloc[0]
                             CTD_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                             CTD_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                             CTD_act.loc[index,'description'] = S1['description'].iloc[0]
+                            CTD_act.loc[index, 'note'] ='Harmonized gene ID'
                         else:
                             CTD_act.loc[index, 'entrez'] = None
                             CTD_act.loc[index, 'gene_type'] = None
                             CTD_act.loc[index, 'hgnc_symbol'] = None
-                            CTD_act.loc[index, 'description'] = None  
-                            Des='Failed to convert the gene ID'
+                            CTD_act.loc[index, 'description'] = None
+                            CTD_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                     CTD_act['datasource'] = 'CTD'
                     # No activity values in database so no pChEMBL score calculated
                     CTD_act['pchembl_value'] = np.nan
@@ -124,7 +134,7 @@ class CTD(Database):
             else:
                 statement = 'No interaction data'
         else:
-            statement = 'Compound doesn\'t have any cid'
+            statement = 'Compound does not have any cid'
 
         return CTD_act, statement, CTD_raw
     

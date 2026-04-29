@@ -9,14 +9,26 @@ import requests
 from ..utils.typing import Connection
 from ..servers.PubChemServer import PubChemServer
 from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
 from ..data_manager import *
 from ..utils.helper import generate_subsets
 from .Database import Database
 
 class Stitch(Database):
     
-    def __init__(self,connection:Connection|None=None, database: pd.DataFrame|None=None, merge_stereoisomers=False):
+    def __init__(self,connection:Connection|None=None, database: pd.DataFrame|None=None, 
+                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
         super().__init__(merge_stereoisomers)
+
+        if gene_server is not None:
+            self.gene_server = gene_server
+        elif server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+        
         # if not connection and not database:
         #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
@@ -31,12 +43,10 @@ class Stitch(Database):
         Steps
         -----
         - Creates specific and unspecific identifiers from input CID.
-        - Finds matches on the database, based on the set_stereo value \\
-        Constraint:
-            - Only experimental evidence
-        - Links stitch to STRING to obtain updated protein ids and symbols.
-        - Uses Biomart to obtain proteins info (modified with data from original DTC database) to return,
-        searching with ensembl peptide id.
+        - Finds matches on the database, based on merge_stereoisomers
+        Filters by experimental evidence and human.
+        - Links STITCH to STRING to obtain updated protein ids and symbols.
+        - Uses API to obtain proteins info searching with ensembl peptide id.
         
         Parameters
         ----------
@@ -44,22 +54,14 @@ class Stitch(Database):
             Dataframe containing all DTC database info
         input_comp : DataFrame
             Dataframe of input compounds from which interacting proteins are found
-        set_stereo : bool
-            value to determine which kind of stereochemistry to consider for the input compound:
-            - True (default) - specific stereochemistry
-            - False - non-specific stereochemistry \\ 
-            True ensures exact match to input_id
+        merge_stereoisomers : bool
+            determines if results respect stereochemical specificity of input compound
 
         Returns
         -------
         DataFrame
-            Dataframe of interacting proteins, containing the following values:
-            - entrez 
-            - gene_type 
-            - hgnc_symbol 
-            - description 
-            - datasource (Stitch) 
-            - pchembl_value (NaN)
+            Dataframe of interacting proteins, containing the following values: \\
+            entrez, gene_type, hgnc_symbol, description, datasource (STITCH), pchembl_value
         String
             A statement string describing the outcome of the database search
         DataFrame
@@ -106,8 +108,9 @@ class Stitch(Database):
                                                                             'symbol': 'String_symbol'})
                         sttch_act = pd.merge(sttch_act, genes, on='String_id', how='left')
                         
-                    # Unify gene identifiers by Converting STITCH with biomart
-                    ensembl = BiomartServer()
+                    # Unify gene identifiers by Harmonizing IDs
+                    ensembl = self.gene_server
+
                     # Stitch uses ensembl peptide id
                     input_type = 'ensembl_peptide_id'
                     attributes = ['ensembl_peptide_id', 'entrezgene_id', 'gene_biotype', 'hgnc_symbol', 'description']
@@ -130,12 +133,13 @@ class Stitch(Database):
                             sttch_act.loc[index,'gene_type'] = S1['gene_type'].iloc[0]
                             sttch_act.loc[index,'hgnc_symbol'] = S1['hgnc_symbol'].iloc[0]
                             sttch_act.loc[index,'description'] = S1['description'].iloc[0]
+                            sttch_act.loc[index, 'note'] ='Harmonized gene ID'
                         else:
                             sttch_act.loc[index,'entrez'] = None
                             sttch_act.loc[index,'gene_type'] = None
                             sttch_act.loc[index,'hgnc_symbol'] = None
                             sttch_act.loc[index,'description'] = None
-                            Des = 'Failed to convert the gene ID'                   
+                            sttch_act.loc[index, 'note'] ='Failed to harmonize gene ID'                  
                     sttch_act['datasource'] = 'Stitch'
                     sttch_act['pchembl_value'] = np.nan
                     statement = 'completed'
@@ -165,23 +169,16 @@ class Stitch(Database):
             Dataframe of input proteins from which interacting compound are found
         stitch_data : DataFrame
             Dataframe containing all stitch database info        
-        set_stereo : bool
-            value to determine which kind of stereochemistry to consider for the input compound:
-            - True (default) - specific stereochemistry
-            - False - non-specific stereochemistry \\ 
-            True ensures exact match to input_id
 
         Returns
         -------
         DataFrame
-            Dataframe of interacting compounds, containing the following values:
-            - inchi
-            - inchikey
-            - isomeric smiles
-            - iupac name
-            - datasource (Stitch)
-            - pchembl value (NaN)
-            - notes (NaN)
+            Dataframe of interacting compounds, containing the following values: \\
+            inchi, inchikey, isomeric_smiles, iupac_name, datasource (STITCH), pchembl_value, notes (activity type)
+        String
+            A statement string describing the outcome of the database search
+        DataFrame
+            Raw Dataframe containing all STITCH info about the protein
         """
 
         columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
