@@ -5,7 +5,7 @@ A software package to collect and harmonize small molecule and protein interacti
 
 from .pipelines import Comp2Prot, Prot2Comp
 from .databases import BindingDB, ChEMBL, CTD, Database, DrugBank, DrugCentral, DTC, OTP, PubChem, Stitch
-from .servers import BiomartServer,ChEMBLServer,PubChemServer
+from .servers import BiomartServer,ChEMBLServer,PubChemServer,MyGeneServer
 from .data_manager import APIManager, DataManager, LocalManager, SQLManager
 from .sql_connection import sql_connection
 from .utils import helper, identifiers
@@ -14,7 +14,7 @@ from .utils import helper, identifiers
 __all__ = [
     'Comp2Prot', 'Prot2Comp',
     'BindingDB', 'ChEMBL', 'CTD', 'Database', 'DrugBank', 'DrugCentral', 'DTC', 'OTP', 'PubChem', 'Stitch',
-    'BiomartServer', 'ChEMBLServer', 'PubchemServer',
+    'BiomartServer', 'MyGeneServer', 'ChEMBLServer', 'PubChemServer',
     'APIManager', 'DataManager', 'LocalManager', 'SQLManager',
     'sql_connection',
     'helper', 'identifiers'
