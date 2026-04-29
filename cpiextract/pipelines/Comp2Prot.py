@@ -9,7 +9,8 @@ from .Pipeline import Pipeline
 class Comp2Prot(Pipeline):
     '''Retrieve proteins interacting with the small molecule passed as input.'''
 
-    def _update_args(self, pChEMBL_thres: float, dtc_mutated: bool, dc_extra: bool, chembl_ids: list[str], merge_stereoisomers: bool, verbose: bool):
+    def _update_args(self, pChEMBL_thres: float, dtc_mutated: bool, dc_extra: bool, chembl_ids: list[str], 
+                     merge_stereoisomers: bool, verbose: bool):
         self.database_args = {
             'pc': (pChEMBL_thres,merge_stereoisomers,),
             'chembl': (chembl_ids, pChEMBL_thres,merge_stereoisomers,),
@@ -32,11 +33,13 @@ class Comp2Prot(Pipeline):
     #    - merge_stereoisomers - to select whether data collected is stereo-specific or generic to a structure
 
     def comp_interactions(self, input_id: int|str, pChEMBL_thres: float=0, 
-                        dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
+                        dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, 
+                        verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
         
         # Run interaction select with all databases selected
         comp_tar, state = self.comp_interactions_select(input_id, pChEMBL_thres=pChEMBL_thres, 
-                                                    dtc_mutated=dtc_mutated, dc_extra=dc_extra, merge_stereoisomers=merge_stereoisomers, verbose=verbose)
+                                                    dtc_mutated=dtc_mutated, dc_extra=dc_extra, 
+                                                    merge_stereoisomers=merge_stereoisomers, verbose=verbose)
         return comp_tar, state
 
     # Calls functions to collect data and merges all the data from the selected sources together
@@ -49,7 +52,8 @@ class Comp2Prot(Pipeline):
     #    - merge_stereoisomers - to select whether data collected is stereo-specific or generic to a structure
 
     def comp_interactions_select(self, input_id: int|str, selected_dbs: str='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
-                                 pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
+                                 pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, 
+                                 verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
         #pChEMBL_thres default 0: Will only interactions without activity data in sources with activity data present
         #merge_stereoisomers default False: False=selects interactions for a structure without stereo-specificity
 
@@ -138,13 +142,14 @@ class Comp2Prot(Pipeline):
             # Select rows for this protein-compound pair
             tar = tar_all.loc[(tar_all['hgnc_symbol'] == target) & (tar_all['db_inchikey'] == inchikey)]
         
-            # Copy the biomart data to the output dataframe
+            # Copy the protein ID data to the output dataframe
             comp_tar.loc[index,'entrez'] = int(tar['entrez'].iloc[0])
             comp_tar.loc[index,'hgnc_symbol'] = tar['hgnc_symbol'].iloc[0]
             comp_tar.loc[index,'description'] = tar['description'].iloc[0]
             comp_tar.loc[index,'gene_type'] = tar['gene_type'].iloc[0]
             comp_tar.loc[index,'db_inchikey'] = inchikey  # Add the compound inchikey
-        
+            # comp_tar.loc[index,'note'] = tar['note'].iloc[0]
+
             comp_tar = self._aggregate_pchembl(comp_tar, index, tar)
         
             # Count sources for this protein-compound pair

@@ -1,17 +1,20 @@
 '''Template for a pipeline.Load,search,filter,postprocess datas from all of the databases.'''
 
-from abc import ABC
-from ..databases import *
-from ..sql_connection import connect_to_mysql
 import pandas as pd
 import numpy as np
 import os
 
+from abc import ABC
+from ..databases import *
+from ..sql_connection import connect_to_mysql
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
+
 class Pipeline(ABC):
     '''Template for a pipeline.Load,search,filter,postprocess datas from all of the databases.'''
 
-    def __init__(self, execution_mode: str ='local', dbs: dict|None=None, server_info: dict|None=None, 
-                 merge_stereoisomers=False, pubchem_files: dict|None=None) -> None:
+    def __init__(self, execution_mode: str='local', dbs: dict|None=None, server_info: dict|None=None, 
+                 pubchem_files: dict|None=None, merge_stereoisomers: bool=False, server_select: str='mygene') -> None:
         """
         Parameters
         ----------
@@ -33,14 +36,13 @@ class Pipeline(ABC):
         
         pubchem_files : dict, optional
             Dictionary containing path to PubChem local database for faster processing.
-            If not provided, will check default location: ~/CPE_data/pubchem/pubchem.duckdb
-            Can also be set via PUBCHEM_DATA environment variable.
-            Expected:
-            {
-                "bioact_file": "path/to/pc_bioactivities.tsv.gz"  
-                # (derives pubchem.duckdb from this path)
-            }
+            Expects local in a dubckdb structure: pubchem.duckdb
             If database not found, PubChem will use API calls.
+
+        server_select : {'mygene', 'biomart'}, default 'mygene'
+            The service used for gene identifier harmonization.
+            - mygene: queries MyGene.info (recommended, more stable)
+            - biomart: queries Ensembl BioMart
         """
 
         self.cnx = None
@@ -67,17 +69,23 @@ class Pipeline(ABC):
         # Get PubChem database path with automatic detection
         pc_bioact = self._get_pubchem_path(pubchem_files)
         
+        if server_select == 'mygene':
+            self.gene_server = MyGeneServer()
+        elif server_select == 'biomart':
+            self.gene_server = BiomartServer()
+        else:
+            raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
         self.databases = {
-            'pc': PubChem(merge_stereoisomers=self.merge_stereoisomers,
-                         bioact_file=pc_bioact),
-            'chembl': ChEMBL(database=dbs.get('chembl', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers),
-            'bdb': BindingDB(database=dbs.get('bdb', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers),
-            'stitch': Stitch(database=dbs.get('stitch', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers),
-            'ctd': CTD(database=dbs.get('ctd', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers),
-            'dtc': DTC(database=dbs.get('dtc', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers),
-            'otp': OTP(database=dbs.get('otp', None),chembl_database=dbs.get('chembl', None), merge_stereoisomers=self.merge_stereoisomers),
-            'dc': DrugCentral(database=dbs.get('dc', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers),
-            'db': DB(database=dbs.get('db', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers)
+            'pc': PubChem(merge_stereoisomers=self.merge_stereoisomers,bioact_file=pc_bioact,gene_server=self.gene_server),
+            'chembl': ChEMBL(database=dbs.get('chembl', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'bdb': BindingDB(database=dbs.get('bdb', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'stitch': Stitch(database=dbs.get('stitch', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'ctd': CTD(database=dbs.get('ctd', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'dtc': DTC(database=dbs.get('dtc', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'otp': OTP(database=dbs.get('otp', None),chembl_database=dbs.get('chembl', None), merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'dc': DrugCentral(database=dbs.get('dc', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server),
+            'db': DB(database=dbs.get('db', None), connection=self.cnx,merge_stereoisomers=self.merge_stereoisomers,gene_server=self.gene_server)
         }
 
         self.database_args = {}
@@ -92,28 +100,20 @@ class Pipeline(ABC):
             # Check for direct database file specification first
             if 'db_file' in pubchem_files:
                 return pubchem_files['db_file']
-            # Otherwise derive from bioact_file (backward compatible)
-            elif 'bioact_file' in pubchem_files:
-                return pubchem_files['bioact_file']
     
         # Try environment variable
         pubchem_dir = os.environ.get('PUBCHEM_DATA')
     
-        # Fall back to default location
+        # Fallback to default location
         if not pubchem_dir:
             pubchem_dir = os.path.join(os.path.expanduser('~'), 'CPE_data', 'pubchem')
-    
         if not os.path.exists(pubchem_dir):
             return None
     
-        # Return path to database or bioact file
+        # Return path to database
         db_file = os.path.join(pubchem_dir, 'pubchem.duckdb')
         if os.path.exists(db_file):
             return db_file
-    
-        bioact_file = os.path.join(pubchem_dir, 'pc_bioactivities.tsv.gz')
-        if os.path.exists(bioact_file):
-            return bioact_file
     
         return None
 

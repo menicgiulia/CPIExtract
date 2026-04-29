@@ -31,7 +31,8 @@ class Prot2Comp(Pipeline):
     #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
     #    - merge_stereoisomers - to select whether data collected is stereo-specific or generic to a structure
 
-    def prot_interactions(self, input_id: int|str, pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False,verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def prot_interactions(self, input_id: int|str, pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, 
+                          merge_stereoisomers: bool=False,verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
 
         # Run interaction select with all databases selected
         prot_comp, state = self.prot_interactions_select(input_id, pChEMBL_thres=pChEMBL_thres, dtc_mutated=dtc_mutated, 
@@ -50,11 +51,12 @@ class Prot2Comp(Pipeline):
     #    - merge_stereoisomers - to select whether data collected is stereo-specific or generic to a structure
 
     def prot_interactions_select(self, input_id: int|str, selected_dbs: str='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
-                                 pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False,verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
+                                 pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False,
+                                 verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
 
         self._update_args(pChEMBL_thres, dtc_mutated, dc_extra, merge_stereoisomers,verbose)
 
-        prot_ids = protein_identifiers(input_id)
+        prot_ids = protein_identifiers(input_id,gene_server=self.gene_server)
 
         main_columns=['inchi','inchikey','isomeric_smiles','iupac_name','pchembl_value','datasource']    
 
