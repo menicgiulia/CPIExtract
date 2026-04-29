@@ -1,12 +1,26 @@
 '''Retrieves protein or compond identifiers from servers.'''
 
-from ..servers.BiomartServer import BiomartServer
-from ..servers.PubChemServer import PubChemServer
 import pubchempy as pcp
 import pandas as pd
 import time
+import re
 
-def protein_identifiers(input_id: int | str) -> pd.DataFrame:
+from ..servers.BiomartServer import BiomartServer
+from ..servers.MyGeneServer import MyGeneServer
+from ..servers.PubChemServer import PubChemServer
+
+
+# Uniprot format checks:
+#   Format 1 (reviewed Swiss-Prot): [OPQ][0-9][A-Z0-9]{3}[0-9]  e.g. P11473
+#   Format 2 (TrEMBL):              [A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}  e.g. A0A000
+#   Optional isoform suffix:        -\d+  e.g. P11473-2
+UNIPROT_REGEX = re.compile(
+    r'^([OPQ][0-9][A-Z0-9]{3}[0-9]'
+    r'|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})'
+    r'(-\d+)?$'
+)
+
+def protein_identifiers(input_id: int | str, gene_server=None, server_select='mygene') -> pd.DataFrame:
     """
     Retrieves protein identifiers from Biomart.
 
@@ -24,6 +38,16 @@ def protein_identifiers(input_id: int | str) -> pd.DataFrame:
         Dataframe of the protein(s) containing the following values: \\
         uniprotswissprot, entrezgene_id, chembl, ensembl_peptide_id, ensembl_gene_id, hgnc_symbol, gene_type, description
     """
+
+    if gene_server is not None:
+        pass
+    elif server_select == 'mygene':
+        gene_server = MyGeneServer()
+    elif server_select == 'biomart':
+        gene_server = BiomartServer()
+    else:
+        raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
+
     try:
         # Check if input_id is an integer
         if isinstance(input_id, int):
@@ -35,7 +59,7 @@ def protein_identifiers(input_id: int | str) -> pd.DataFrame:
             inputtype='ensembl_peptide_id'
         elif input_id.find('ENSG') == 0 and len(input_id) == 15:
             inputtype='ensembl_gene_id'
-        elif len(input_id) == 6:
+        elif UNIPROT_REGEX.match(str(input_id)):
             inputtype='uniprotswissprot'
         elif input_id.find('CHEMBL') == 0:
             inputtype='chembl'
@@ -45,7 +69,7 @@ def protein_identifiers(input_id: int | str) -> pd.DataFrame:
         raise TypeError("Input needs to be entrezgene_id, hgnc_id, ensembl_peptide_id, ensembl_gene_id, uniprotswissprot or chembl id. \
                         If error persists, then likely input identifier does not exist on ensembl.")
     
-    ensembl = BiomartServer()
+    ensembl=gene_server
     attributes = ['uniprotswissprot','entrezgene_id','chembl','ensembl_peptide_id','ensembl_gene_id']
     columns = ['uniprot','entrez','chembl','ensembl_peptide_id','ensembl_gene_id']
     input_protein = ensembl.search(inputtype, input_id, attributes, columns)
