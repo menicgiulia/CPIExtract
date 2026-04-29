@@ -191,12 +191,21 @@ class Stitch(Database):
         input_protein = input_protein.drop_duplicates(subset='ensembl_peptide_id').reset_index(drop=True)
         # Check if there are any input proteins remaining   
         if len(input_protein) > 0:
-            input_protein_id = input_protein['ensembl_peptide_id'][0]
-            input_protein_id = '9606.' + str(input_protein_id)
-            # Remove homo sapiens identifier from the protein id column
-            stitch_raw = self.data_manager.retrieve_raw_data('protein', input_protein_id)
-            stitch_raw['protein'] = stitch_raw['protein'].str.replace('9606.', '', regex=True)
-            # stitch_raw = stitch_data.loc[stitch_data['protein']==input_protein_id]
+        # Query all available peptide IDs instead of just the first
+            peptide_ids = input_protein['ensembl_peptide_id'].dropna().unique().tolist()
+    
+            stitch_raw_list = []
+            for peptide_id in peptide_ids:
+                prefixed_id = '9606.' + str(peptide_id)
+                raw = self.data_manager.retrieve_raw_data('protein', prefixed_id)
+                if len(raw) > 0:
+                    raw['protein'] = raw['protein'].str.replace('9606.', '', regex=True)
+                    stitch_raw_list.append(raw)
+    
+            if stitch_raw_list:
+                stitch_raw = pd.concat(stitch_raw_list, ignore_index=True).drop_duplicates()
+            else:
+                stitch_raw = pd.DataFrame()
 
             if len(stitch_raw) > 0:
                 # Remove CIDs and CIDm strings from chemical column
