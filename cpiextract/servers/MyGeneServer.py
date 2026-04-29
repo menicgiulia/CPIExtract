@@ -51,6 +51,9 @@ class MyGeneServer(metaclass=Singleton):
         'uniprot':           'uniprot.Swiss-Prot',
         'description':   'name',
     }
+    
+    # Columns to explode into separate rows — matches BioMart one-row-per-value behavior.
+    EXPLODE_FIELDS = {'ensembl_peptide_id'} #STITCH
 
     def __init__(self) -> None:
         self.mg = mygene.MyGeneInfo()
@@ -71,18 +74,39 @@ class MyGeneServer(metaclass=Singleton):
         if mygene_field == 'ensembl.protein':
             ensembl = hit.get('ensembl', {})
             if isinstance(ensembl, list):
-                ensembl = ensembl[0]
-            val = ensembl.get('protein') if isinstance(ensembl, dict) else None
+                # Extract protein ID from each dict, filter out None
+                val = [e.get('protein') for e in ensembl if isinstance(e, dict) and e.get('protein')]
+            else:
+                val = ensembl.get('protein') if isinstance(ensembl, dict) else None
 
         elif mygene_field == 'ensembl.gene':
             ensembl = hit.get('ensembl', {})
             if isinstance(ensembl, list):
-                ensembl = ensembl[0]
-            val = ensembl.get('gene') if isinstance(ensembl, dict) else None
+                # Extract gene ID from each dict, deduplicate (gene ID is same across transcripts)
+                seen = set()
+                val = [e.get('gene') for e in ensembl 
+                       if isinstance(e, dict) and e.get('gene') and not (e.get('gene') in seen or seen.add(e.get('gene')))]
+            else:
+                val = ensembl.get('gene') if isinstance(ensembl, dict) else None
 
         elif mygene_field == 'uniprot.Swiss-Prot':
             uniprot = hit.get('uniprot', {})
             val = uniprot.get('Swiss-Prot') if isinstance(uniprot, dict) else None
+
+        elif mygene_field == 'chembl':
+            chembl = hit.get('chembl')
+            if isinstance(chembl, dict):
+                val = chembl.get('chembl_target')
+            elif isinstance(chembl, list):
+                val = [c.get('chembl_target') for c in chembl if isinstance(c, dict) and c.get('chembl_target')]
+            else:
+                val = chembl
+
+        elif mygene_field == 'HGNC':
+            val = hit.get('HGNC')
+            # Restore prefix stripped by _normalize_ids so DrugBank matching works
+            if val is not None:
+                val = f'HGNC:{val}'
 
         elif mygene_field == 'type_of_gene':
             val = hit.get('type_of_gene')
@@ -92,18 +116,16 @@ class MyGeneServer(metaclass=Singleton):
         else:
             val = hit.get(mygene_field)
 
-        # If MyGene returns a list for a field, take the first element
-        if isinstance(val, list):
-            val = val[0] if val else None
-
         return val
 
     def _hits_to_dataframe(self, hits: list, input_type: str,
                            original_ids: list, column_names: list) -> pd.DataFrame:
         '''
-        Convert MyGene query many results to a DataFrame that matches column_names.
-        The first column of column_names is always the input ID column — its values come from hit['query']. 
-        All remaining columns are resolved via COLUMN_FIELD_MAP against MyGene response fields.
+        Convert MyGene querymany results to a DataFrame that matches column_names.
+
+        The first column of column_names is always the input ID column — its
+        values come from hit['query'] (the original queried ID). All remaining
+        columns are resolved via COLUMN_FIELD_MAP against MyGene response fields.
         '''
         records = []
         for hit in hits:
@@ -112,17 +134,18 @@ class MyGeneServer(metaclass=Singleton):
 
             record = {}
 
-            # First column: the input ID (query value as sent to MyGene)
-            record[column_names[0]] = hit.get('query')
-
-            # Remaining columns: map via COLUMN_FIELD_MAP
-            for col in column_names[1:]:
+            # All columns resolved via COLUMN_FIELD_MAP
+            # For the first column, fall back to hit['query'] only if the field
+            # is not in COLUMN_FIELD_MAP (e.g. input_type used as passthrough key)
+            for i, col in enumerate(column_names):
                 mygene_field = self.COLUMN_FIELD_MAP.get(col)
-                if mygene_field is None:
+                if mygene_field is not None:
+                    record[col] = self._extract_field(hit, mygene_field)
+                elif i == 0:
+                    # First column with no field mapping — use query value as passthrough
+                    record[col] = hit.get('query')
+                else:
                     record[col] = None
-                    continue
-
-                record[col] = self._extract_field(hit, mygene_field)
 
             records.append(record)
 
@@ -130,6 +153,20 @@ class MyGeneServer(metaclass=Singleton):
             return pd.DataFrame(columns=column_names)
 
         df = pd.DataFrame(records, columns=column_names)
+
+        # Handle list-valued columns
+        for col in column_names:
+            if not df[col].apply(lambda x: isinstance(x, list)).any():
+                continue
+            if col in self.EXPLODE_FIELDS:
+                # Explode into separate rows — matches BioMart one-row-per-value behavior
+                df = df.explode(col).reset_index(drop=True)
+            else:
+                # Take first value — avoids cartesian product from multi-column explode
+                df[col] = df[col].apply(
+                    lambda x: x[0] if isinstance(x, list) and x else None
+                )
+
         return df
 
     def search(self, input_type: str, input_id: list | str | int,
