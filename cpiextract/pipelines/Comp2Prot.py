@@ -33,13 +33,15 @@ class Comp2Prot(Pipeline):
     #    - merge_stereoisomers - to select whether data collected is stereo-specific or generic to a structure
 
     def comp_interactions(self, input_id: int|str, pChEMBL_thres: float=0, 
-                        dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, 
-                        verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
-        
+                    dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, 
+                    verbose: bool=False,
+                    prebuilt_comp_ids: pd.DataFrame|None=None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    
         # Run interaction select with all databases selected
         comp_tar, state = self.comp_interactions_select(input_id, pChEMBL_thres=pChEMBL_thres, 
-                                                    dtc_mutated=dtc_mutated, dc_extra=dc_extra, 
-                                                    merge_stereoisomers=merge_stereoisomers, verbose=verbose)
+                                                dtc_mutated=dtc_mutated, dc_extra=dc_extra, 
+                                                merge_stereoisomers=merge_stereoisomers, verbose=verbose,
+                                                prebuilt_comp_ids=prebuilt_comp_ids)
         return comp_tar, state
 
     # Calls functions to collect data and merges all the data from the selected sources together
@@ -52,19 +54,22 @@ class Comp2Prot(Pipeline):
     #    - merge_stereoisomers - to select whether data collected is stereo-specific or generic to a structure
 
     def comp_interactions_select(self, input_id: int|str, selected_dbs: str='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
-                                 pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, merge_stereoisomers: bool=False, 
-                                 verbose: bool=False) -> tuple[pd.DataFrame, pd.DataFrame]:
-        #pChEMBL_thres default 0: Will only interactions without activity data in sources with activity data present
-        #merge_stereoisomers default False: False=selects interactions for a structure without stereo-specificity
+                             pChEMBL_thres: float=0, dtc_mutated: bool=False, dc_extra: bool=False, 
+                             merge_stereoisomers: bool=False, verbose: bool=False,
+                             prebuilt_comp_ids: pd.DataFrame|None=None) -> tuple[pd.DataFrame, pd.DataFrame]:
 
         chembl_ids: list[str] = []
-        self._update_args(pChEMBL_thres, dtc_mutated, dc_extra, chembl_ids, merge_stereoisomers,verbose)
+        self._update_args(pChEMBL_thres, dtc_mutated, dc_extra, chembl_ids, merge_stereoisomers, verbose)
 
         main_columns = ['entrez','gene_type','hgnc_symbol','description','pchembl_value','datasource','inchikey']
         comp_tar = pd.DataFrame(columns=main_columns)
-        #Collect all the data through the other functions
-        comp_ids = compound_identifiers(input_id) #find comp_ids
-        #Outputs the brief statement regarding the processing of each source 
+
+        # Use prebuilt comp_ids if provided, otherwise call compound_identifiers
+        if prebuilt_comp_ids is not None:
+            comp_ids = prebuilt_comp_ids
+        else:
+            comp_ids = compound_identifiers(input_id)
+
         states = pd.DataFrame(columns=['comp'])
         states.loc[0, 'comp'] = input_id
 
@@ -102,10 +107,10 @@ class Comp2Prot(Pipeline):
 
             if len(comp_tar) > 0:
                 # Add std compound ids to output
-                comp_ids=comp_ids.rename(columns={'isomeric_smiles':'pc_iso_smiles','inchi':'pc_inchi',
+                comp_ids=comp_ids.rename(columns={'smiles':'pc_iso_smiles','connectivity_smiles':'pc_canonical_smiles','inchi':'pc_inchi',
                                                   'inchikey':'pc_inchikey','inchikey_fb':'pc_firstblock',
-                                                  'iupac_name':'pc_iupac_name','cid':'pc_cid'})
-                std_ids = comp_ids[['pc_iso_smiles', 'pc_inchi', 'pc_inchikey', 'pc_firstblock', 'pc_iupac_name', 'pc_cid']]
+                                                  'iupac_name':'pc_iupac_name','CID':'pc_cid'})
+                std_ids = comp_ids[['pc_iso_smiles', 'pc_canonical_smiles', 'pc_inchi', 'pc_inchikey', 'pc_firstblock', 'pc_iupac_name', 'pc_cid']]
                 # Select first nonNa value from each column
                 std_ids = std_ids.apply(lambda col: std_ids[col.name].dropna().iloc[0] if not std_ids[col.name].dropna().empty else None)
                 # Assign to each row the standard ids
@@ -114,7 +119,7 @@ class Comp2Prot(Pipeline):
                 comp_tar['input_id'] = input_id
 
                 # Reorder columns
-                comp_tar = comp_tar[['input_id', 'pc_inchi', 'pc_inchikey', 'pc_firstblock', 'pc_iso_smiles', 
+                comp_tar = comp_tar[['input_id', 'pc_inchi', 'pc_inchikey', 'pc_firstblock', 'pc_iso_smiles', 'pc_canonical_smiles', 
                                      'pc_iupac_name','pc_cid', 'db_inchikey', 'entrez', 'gene_type', 
                                      'hgnc_symbol', 'description',
                                     'pchembl_count', 'ave_pchembl', 'std_pchembl', 'src_count', 'pubchem',

@@ -58,7 +58,7 @@ class Prot2Comp(Pipeline):
 
         prot_ids = protein_identifiers(input_id,gene_server=self.gene_server)
 
-        main_columns=['inchi','inchikey','isomeric_smiles','iupac_name','pchembl_value','datasource']    
+        main_columns=['inchi','inchikey','smiles','connectivity_smiles','iupac_name','pchembl_value','datasource']    
 
         prot_comp = pd.DataFrame(columns=main_columns)
 
@@ -110,7 +110,7 @@ class Prot2Comp(Pipeline):
 
                 # Reorder columns
                 prot_comp = prot_comp[['input_id', 'entrez', 'gene_type', 'hgnc_symbol', 'description',
-                                    'inchi', 'inchikey', 'inchikey_fb', 'isomeric_smiles', 'iupac_name', 'pchembl_count',
+                                    'inchi', 'inchikey', 'inchikey_fb', 'smiles','connectivity_smiles', 'iupac_name', 'pchembl_count',
                                     'ave_pchembl', 'std_pchembl', 'src_count', 'pubchem', 'chembl', 'bindingdb', 'stitch',
                                     'ctd', 'dtc', 'otp', 'drugcentral', 'drugbank']]
 
@@ -130,7 +130,7 @@ class Prot2Comp(Pipeline):
         # Deduplicate by full InChIKey (not by first-block)
         comp_list = comp_all['inchikey'].unique()
 
-        tar_comp = pd.DataFrame(columns=['inchi', 'inchikey', 'inchikey_fb', 'isomeric_smiles', 'iupac_name',
+        tar_comp = pd.DataFrame(columns=['inchi', 'inchikey', 'inchikey_fb', 'smiles', 'connectivity_smiles','iupac_name',
                                      'pchembl_count', 'ave_pchembl', 'std_pchembl', 'src_count'] + 
                                      [source.lower() for source in self.sources])
     
@@ -142,7 +142,8 @@ class Prot2Comp(Pipeline):
                 tar_comp.loc[index, 'inchi'] = comp['inchi'].iloc[0]
                 tar_comp.loc[index, 'inchikey'] = comp['inchikey'].iloc[0]
                 tar_comp.loc[index, 'inchikey_fb'] = comp['inchikey_fb'].iloc[0]
-                tar_comp.loc[index, 'isomeric_smiles'] = comp['isomeric_smiles'].iloc[0]
+                tar_comp.loc[index, 'smiles'] = comp['smiles'].iloc[0]
+                tar_comp.loc[index, 'connectivity_smiles'] = comp['connectivity_smiles'].iloc[0]
                 tar_comp.loc[index, 'iupac_name'] = comp['iupac_name'].iloc[0]
             
                 # Aggregate pchembl values
