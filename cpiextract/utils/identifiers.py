@@ -171,6 +171,7 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
             raise TypeError("Input needs to be CID, InChI, InChIKey, or SMILES. If error persists, then likely input identifier does not exist on PubChem.")
     
     if 'inchikey' in input_compound.columns:
+        input_compound = input_compound.copy()
         # Handle single row case
         if len(input_compound) == 1:
             inchikey_val = input_compound['inchikey'].iloc[0]
