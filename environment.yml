@@ -81,7 +81,7 @@ dependencies:
   - prompt_toolkit=3.0.43
   - psutil=5.9.0
   - ptyprocess=0.7.0
-  - pubchempy=1.0.4
+  - pubchempy=1.0.5
   - pure_eval=0.2.2
   - pycparser=2.21
   - pygments=2.15.1
