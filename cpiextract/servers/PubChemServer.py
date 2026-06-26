@@ -12,11 +12,17 @@ class PubChemServer(metaclass=Singleton):
     '''The server to perform pubchem requests.'''
 
     def __init__(self) -> None:
-        self.properties = {value: key for key, value in pcp.PROPERTY_MAP.items()}
+        # Explicitly select only the properties we use by key name
+        # Removes deprecated keys (isomeric_smiles, canonical_smiles) in PubChem version 1.0.5
+        _keys = ['inchi', 'inchikey', 'smiles', 'connectivity_smiles', 'iupac_name', 'molecular_formula','molecular_weight']
+
+        self.properties = {pcp.PROPERTY_MAP[k]: k for k in _keys}
 
     def get_columns(self, selected_columns: list[str]) -> list[str]:
         '''Return selected columns' original field names in pubchem.'''
-        return [pcp.PROPERTY_MAP[col] for col in selected_columns]
+        #return [pcp.PROPERTY_MAP[col] for col in selected_columns] #PubChem version 1.0.4 only
+        reverse = {v: k for k, v in self.properties.items()}
+        return [reverse[col] for col in selected_columns]
 
     def get_compounds(self, comp: Strs, selected_columns: list[str], domain: str='compound', namespace: str='cid') -> pd.DataFrame:
         '''Return compounds' selected properties from pubchem.
