@@ -165,14 +165,14 @@ class CTD(Database):
             Dataframe of interacting compounds, containing the following values:
             - inchi
             - inchikey
-            - isomeric smiles
+            - smiles (isomeric)
             - iupac name
             - datasource (CTD)
             - pchembl value (NaN)
             - notes (NaN)
         """
 
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
         # Create an empty DataFrame with the specified columns
         ctd_c1 = pd.DataFrame(columns=columns)
         ctd_raw = pd.DataFrame()

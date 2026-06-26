@@ -273,14 +273,14 @@ class OTP(Database):
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (OTP), pchembl_value, notes (nan)
+            inchi, inchikey, smiles, iupac_name, datasource (OTP), pchembl_value, notes (nan)
         String
             Statement describing outcome
         DataFrame
             Raw data
         """
         
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
         # Create an empty DataFrame with the specified columns
         otp_c1 = pd.DataFrame(columns=columns)
         otp_raw = pd.DataFrame()
@@ -465,7 +465,7 @@ class OTP(Database):
             otp_raw = otp_raw.drop_duplicates(subset='drugId').reset_index(drop=True)
         except TypeError:
             # There was an error with the data types, return empty dataframe
-            otp_raw = pd.DataFrame(columns=['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value'])
+            otp_raw = pd.DataFrame(columns=['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value'])
 
         return otp_raw
 

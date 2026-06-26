@@ -174,14 +174,14 @@ class Stitch(Database):
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (STITCH), pchembl_value, notes (activity type)
+            inchi, inchikey, smiles, iupac_name, datasource (STITCH), pchembl_value, notes (activity type)
         String
             A statement string describing the outcome of the database search
         DataFrame
             Raw Dataframe containing all STITCH info about the protein
         """
 
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
         # Create an empty DataFrame with the specified columns
         stitch_c1 = pd.DataFrame(columns=columns)
         stitch_raw = pd.DataFrame()

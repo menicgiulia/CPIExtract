@@ -196,7 +196,7 @@ class DrugCentral(Database):
             Raw Dataframe containing all DrugCentral info about the input compound
         """
 
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
         # Create an empty DataFrame with the specified columns
         dc_c1 = pd.DataFrame(columns=columns)
         dc_raw = pd.DataFrame()

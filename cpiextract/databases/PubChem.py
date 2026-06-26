@@ -370,7 +370,7 @@ class PubChem(Database):
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (pc), pchembl_value, notes (activity type)
+            inchi, inchikey, smiles, iupac_name, datasource (pc), pchembl_value, notes (activity type)
         String
             A statement string describing the outcome of the database search
         DataFrame
@@ -384,7 +384,7 @@ class PubChem(Database):
             else:
                 print("Using PubChem API")
 
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
         pubchem_c1 = pd.DataFrame(columns=columns)
         pubchem_raw = pd.DataFrame()
         
@@ -439,8 +439,8 @@ class PubChem(Database):
                     if len(result) > 0:
                         # Create output with all required columns
                         pubchem_c1 = result[['inchi', 'inchikey', 'pchembl_value']].drop_duplicates()
-                        pubchem_c1['isomeric_smiles'] = None  # Will be filled in postprocessing if needed
-                        pubchem_c1['iupac_name'] = None  # Will be filled in postprocessing if needed
+                        pubchem_c1['smiles'] = None  # Will be filled in postprocessing
+                        pubchem_c1['iupac_name'] = None  # Will be filled in postprocessing
                         pubchem_c1['datasource'] = 'PubChem'
                         
                         # Reorder columns
@@ -473,7 +473,7 @@ class PubChem(Database):
                         pc = PubChemServer()
                         try:
                             cid_list = [str(cid) for cid in unique_cids]
-                            selected_columns = pc.get_columns(['inchi', 'inchikey', 'isomeric_smiles', 'iupac_name'])
+                            selected_columns = pc.get_columns(['inchi', 'inchikey', 'smiles', 'iupac_name'])
                             
                             if len(cid_list) > 1000:
                                 compounds = pd.DataFrame()

@@ -243,10 +243,10 @@ class DTC(Database):
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (DTC), pchembl_value, notes (nan)
+            inchi, inchikey, smiles, iupac_name, datasource (DTC), pchembl_value, notes (nan)
         """
 
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','molecular_weight','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','molecular_weight','datasource','pchembl_value']
         # Create an empty DataFrame with the specified columns
         DTC_c1 = pd.DataFrame(columns=columns) 
         DTC_raw = pd.DataFrame()

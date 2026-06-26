@@ -114,7 +114,10 @@ class DB(Database):
                     input_genes = list(DB_act['HGNC'])
                     
                     db_targets = ensembl.subset_search(input_type, input_genes, attributes, names)
-                        
+                    
+                    # Fix: strip 'HGNC:' prefix to match DB_act['HGNC'] format
+                    db_targets['hgnc_id'] = db_targets['hgnc_id'].astype(str).str.replace('HGNC:', '', regex=False)
+
                     # For each compound, assign specific biomart column values to the ones from the original DrugBank database
                     db_targets['hgnc_id']=db_targets['hgnc_id'].astype(str)
                     DB_act['HGNC']=DB_act['HGNC'].str.replace('HGNC:','',regex=False)
@@ -169,14 +172,14 @@ class DB(Database):
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, isomeric_smiles, iupac_name, datasource (db), pchembl_value, notes (activity type)
+            inchi, inchikey, smiles, iupac_name, datasource (db), pchembl_value, notes (activity type)
         String
             A statement string describing the outcome of the database search
         DataFrame
             Raw Dataframe containing all DrugBank info about the protein
         """
 
-        columns = ['inchi','inchikey','isomeric_smiles','iupac_name','datasource','pchembl_value']
+        columns = ['inchi','inchikey','smiles', 'connectivity_smiles','iupac_name','datasource','pchembl_value']
         # Create an empty DataFrame with the specified columns
         db_c1 = pd.DataFrame(columns=columns)
         DB_raw = pd.DataFrame()
