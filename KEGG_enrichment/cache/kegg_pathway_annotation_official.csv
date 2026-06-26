@@ -1,0 +1,586 @@
+map_id,hsa_id,Term_base,Term_clean,kegg_category,kegg_subcategory
+map01100,hsa01100,Metabolic pathways,Metabolic pathways,Metabolism,Global and overview maps
+map01110,hsa01110,Biosynthesis of secondary metabolites,Biosynthesis of secondary metabolites,Metabolism,Global and overview maps
+map01120,hsa01120,Microbial metabolism in diverse environments,Microbial metabolism in diverse environments,Metabolism,Global and overview maps
+map01200,hsa01200,Carbon metabolism,Carbon metabolism,Metabolism,Global and overview maps
+map01210,hsa01210,2-Oxocarboxylic acid metabolism,2-Oxocarboxylic acid metabolism,Metabolism,Global and overview maps
+map01212,hsa01212,Fatty acid metabolism,Fatty acid metabolism,Metabolism,Global and overview maps
+map01230,hsa01230,Biosynthesis of amino acids,Biosynthesis of amino acids,Metabolism,Global and overview maps
+map01232,hsa01232,Nucleotide metabolism,Nucleotide metabolism,Metabolism,Global and overview maps
+map01250,hsa01250,Biosynthesis of nucleotide sugars,Biosynthesis of nucleotide sugars,Metabolism,Global and overview maps
+map01240,hsa01240,Biosynthesis of cofactors,Biosynthesis of cofactors,Metabolism,Global and overview maps
+map01220,hsa01220,Degradation of aromatic compounds,Degradation of aromatic compounds,Metabolism,Global and overview maps
+map01310,hsa01310,Nitrogen cycle,Nitrogen cycle,Metabolism,Global and overview maps
+map01320,hsa01320,Sulfur cycle,Sulfur cycle,Metabolism,Global and overview maps
+map00010,hsa00010,Glycolysis / Gluconeogenesis,Glycolysis / Gluconeogenesis,Metabolism,Carbohydrate metabolism
+map00020,hsa00020,Citrate cycle (TCA cycle),Citrate cycle,Metabolism,Carbohydrate metabolism
+map00030,hsa00030,Pentose phosphate pathway,Pentose phosphate pathway,Metabolism,Carbohydrate metabolism
+map00040,hsa00040,Pentose and glucuronate interconversions,Pentose and glucuronate interconversions,Metabolism,Carbohydrate metabolism
+map00051,hsa00051,Fructose and mannose metabolism,Fructose and mannose metabolism,Metabolism,Carbohydrate metabolism
+map00052,hsa00052,Galactose metabolism,Galactose metabolism,Metabolism,Carbohydrate metabolism
+map00053,hsa00053,Ascorbate and aldarate metabolism,Ascorbate and aldarate metabolism,Metabolism,Carbohydrate metabolism
+map00500,hsa00500,Starch and sucrose metabolism,Starch and sucrose metabolism,Metabolism,Carbohydrate metabolism
+map00620,hsa00620,Pyruvate metabolism,Pyruvate metabolism,Metabolism,Carbohydrate metabolism
+map00630,hsa00630,Glyoxylate and dicarboxylate metabolism,Glyoxylate and dicarboxylate metabolism,Metabolism,Carbohydrate metabolism
+map00640,hsa00640,Propanoate metabolism,Propanoate metabolism,Metabolism,Carbohydrate metabolism
+map00650,hsa00650,Butanoate metabolism,Butanoate metabolism,Metabolism,Carbohydrate metabolism
+map00660,hsa00660,C5-Branched dibasic acid metabolism,C5-Branched dibasic acid metabolism,Metabolism,Carbohydrate metabolism
+map00562,hsa00562,Inositol phosphate metabolism,Inositol phosphate metabolism,Metabolism,Carbohydrate metabolism
+map00566,hsa00566,Sulfoquinovose metabolism,Sulfoquinovose metabolism,Metabolism,Carbohydrate metabolism
+map00190,hsa00190,Oxidative phosphorylation,Oxidative phosphorylation,Metabolism,Energy metabolism
+map00195,hsa00195,Photosynthesis,Photosynthesis,Metabolism,Energy metabolism
+map00196,hsa00196,Photosynthesis - antenna proteins,Photosynthesis - antenna proteins,Metabolism,Energy metabolism
+map00710,hsa00710,Carbon fixation by Calvin cycle,Carbon fixation by Calvin cycle,Metabolism,Energy metabolism
+map00720,hsa00720,Other carbon fixation pathways,Other carbon fixation pathways,Metabolism,Energy metabolism
+map00680,hsa00680,Methane metabolism,Methane metabolism,Metabolism,Energy metabolism
+map00910,hsa00910,Nitrogen metabolism,Nitrogen metabolism,Metabolism,Energy metabolism
+map00920,hsa00920,Sulfur metabolism,Sulfur metabolism,Metabolism,Energy metabolism
+map00061,hsa00061,Fatty acid biosynthesis,Fatty acid biosynthesis,Metabolism,Lipid metabolism
+map00062,hsa00062,Fatty acid elongation,Fatty acid elongation,Metabolism,Lipid metabolism
+map00071,hsa00071,Fatty acid degradation,Fatty acid degradation,Metabolism,Lipid metabolism
+map00073,hsa00073,"Cutin, suberine and wax biosynthesis","Cutin, suberine and wax biosynthesis",Metabolism,Lipid metabolism
+map00074,hsa00074,Mycolic acid biosynthesis,Mycolic acid biosynthesis,Metabolism,Lipid metabolism
+map00100,hsa00100,Steroid biosynthesis,Steroid biosynthesis,Metabolism,Lipid metabolism
+map00120,hsa00120,Primary bile acid biosynthesis,Primary bile acid biosynthesis,Metabolism,Lipid metabolism
+map00121,hsa00121,Secondary bile acid biosynthesis,Secondary bile acid biosynthesis,Metabolism,Lipid metabolism
+map00140,hsa00140,Steroid hormone biosynthesis,Steroid hormone biosynthesis,Metabolism,Lipid metabolism
+map00561,hsa00561,Glycerolipid metabolism,Glycerolipid metabolism,Metabolism,Lipid metabolism
+map00564,hsa00564,Glycerophospholipid metabolism,Glycerophospholipid metabolism,Metabolism,Lipid metabolism
+map00565,hsa00565,Ether lipid metabolism,Ether lipid metabolism,Metabolism,Lipid metabolism
+map00600,hsa00600,Sphingolipid metabolism,Sphingolipid metabolism,Metabolism,Lipid metabolism
+map00590,hsa00590,Arachidonic acid metabolism,Arachidonic acid metabolism,Metabolism,Lipid metabolism
+map00591,hsa00591,Linoleic acid metabolism,Linoleic acid metabolism,Metabolism,Lipid metabolism
+map00592,hsa00592,alpha-Linolenic acid metabolism,alpha-Linolenic acid metabolism,Metabolism,Lipid metabolism
+map01040,hsa01040,Biosynthesis of unsaturated fatty acids,Biosynthesis of unsaturated fatty acids,Metabolism,Lipid metabolism
+map00230,hsa00230,Purine metabolism,Purine metabolism,Metabolism,Nucleotide metabolism
+map00240,hsa00240,Pyrimidine metabolism,Pyrimidine metabolism,Metabolism,Nucleotide metabolism
+map00250,hsa00250,"Alanine, aspartate and glutamate metabolism","Alanine, aspartate and glutamate metabolism",Metabolism,Amino acid metabolism
+map00260,hsa00260,"Glycine, serine and threonine metabolism","Glycine, serine and threonine metabolism",Metabolism,Amino acid metabolism
+map00270,hsa00270,Cysteine and methionine metabolism,Cysteine and methionine metabolism,Metabolism,Amino acid metabolism
+map00280,hsa00280,"Valine, leucine and isoleucine degradation","Valine, leucine and isoleucine degradation",Metabolism,Amino acid metabolism
+map00290,hsa00290,"Valine, leucine and isoleucine biosynthesis","Valine, leucine and isoleucine biosynthesis",Metabolism,Amino acid metabolism
+map00300,hsa00300,Lysine biosynthesis,Lysine biosynthesis,Metabolism,Amino acid metabolism
+map00310,hsa00310,Lysine degradation,Lysine degradation,Metabolism,Amino acid metabolism
+map00220,hsa00220,Arginine biosynthesis,Arginine biosynthesis,Metabolism,Amino acid metabolism
+map00330,hsa00330,Arginine and proline metabolism,Arginine and proline metabolism,Metabolism,Amino acid metabolism
+map00340,hsa00340,Histidine metabolism,Histidine metabolism,Metabolism,Amino acid metabolism
+map00350,hsa00350,Tyrosine metabolism,Tyrosine metabolism,Metabolism,Amino acid metabolism
+map00360,hsa00360,Phenylalanine metabolism,Phenylalanine metabolism,Metabolism,Amino acid metabolism
+map00380,hsa00380,Tryptophan metabolism,Tryptophan metabolism,Metabolism,Amino acid metabolism
+map00400,hsa00400,"Phenylalanine, tyrosine and tryptophan biosynthesis","Phenylalanine, tyrosine and tryptophan biosynthesis",Metabolism,Amino acid metabolism
+map00410,hsa00410,beta-Alanine metabolism,beta-Alanine metabolism,Metabolism,Metabolism of other amino acids
+map00430,hsa00430,Taurine and hypotaurine metabolism,Taurine and hypotaurine metabolism,Metabolism,Metabolism of other amino acids
+map00440,hsa00440,Phosphonate and phosphinate metabolism,Phosphonate and phosphinate metabolism,Metabolism,Metabolism of other amino acids
+map00450,hsa00450,Selenocompound metabolism,Selenocompound metabolism,Metabolism,Metabolism of other amino acids
+map00460,hsa00460,Cyanoamino acid metabolism,Cyanoamino acid metabolism,Metabolism,Metabolism of other amino acids
+map00470,hsa00470,D-Amino acid metabolism,D-Amino acid metabolism,Metabolism,Metabolism of other amino acids
+map00480,hsa00480,Glutathione metabolism,Glutathione metabolism,Metabolism,Metabolism of other amino acids
+map00520,hsa00520,Amino sugar and nucleotide sugar metabolism,Amino sugar and nucleotide sugar metabolism,Metabolism,Glycan biosynthesis and metabolism
+map00541,hsa00541,Biosynthesis of various nucleotide sugars,Biosynthesis of various nucleotide sugars,Metabolism,Glycan biosynthesis and metabolism
+map00510,hsa00510,N-Glycan biosynthesis,N-Glycan biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00513,hsa00513,Various types of N-glycan biosynthesis,Various types of N-glycan biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00512,hsa00512,Mucin type O-glycan biosynthesis,Mucin type O-glycan biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00515,hsa00515,Mannose type O-glycan biosynthesis,Mannose type O-glycan biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00514,hsa00514,Other types of O-glycan biosynthesis,Other types of O-glycan biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00532,hsa00532,Glycosaminoglycan biosynthesis - chondroitin sulfate / dermatan sulfate,Glycosaminoglycan biosynthesis - chondroitin sulfate / dermatan sulfate,Metabolism,Glycan biosynthesis and metabolism
+map00534,hsa00534,Glycosaminoglycan biosynthesis - heparan sulfate / heparin,Glycosaminoglycan biosynthesis - heparan sulfate / heparin,Metabolism,Glycan biosynthesis and metabolism
+map00533,hsa00533,Glycosaminoglycan biosynthesis - keratan sulfate,Glycosaminoglycan biosynthesis - keratan sulfate,Metabolism,Glycan biosynthesis and metabolism
+map00531,hsa00531,Glycosaminoglycan degradation,Glycosaminoglycan degradation,Metabolism,Glycan biosynthesis and metabolism
+map00563,hsa00563,Glycosylphosphatidylinositol (GPI)-anchor biosynthesis,Glycosylphosphatidylinositol (GPI)-anchor biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00601,hsa00601,Glycosphingolipid biosynthesis - lacto and neolacto series,Glycosphingolipid biosynthesis - lacto and neolacto series,Metabolism,Glycan biosynthesis and metabolism
+map00603,hsa00603,Glycosphingolipid biosynthesis - globo and isoglobo series,Glycosphingolipid biosynthesis - globo and isoglobo series,Metabolism,Glycan biosynthesis and metabolism
+map00604,hsa00604,Glycosphingolipid biosynthesis - ganglio series,Glycosphingolipid biosynthesis - ganglio series,Metabolism,Glycan biosynthesis and metabolism
+map00511,hsa00511,Other glycan degradation,Other glycan degradation,Metabolism,Glycan biosynthesis and metabolism
+map00540,hsa00540,Lipopolysaccharide biosynthesis,Lipopolysaccharide biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00542,hsa00542,O-Antigen repeat unit biosynthesis,O-Antigen repeat unit biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00550,hsa00550,Peptidoglycan biosynthesis,Peptidoglycan biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00552,hsa00552,Teichoic acid biosynthesis,Teichoic acid biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00571,hsa00571,Lipoarabinomannan (LAM) biosynthesis,Lipoarabinomannan (LAM) biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00572,hsa00572,Arabinogalactan biosynthesis - Mycobacterium,Arabinogalactan biosynthesis - Mycobacterium,Metabolism,Glycan biosynthesis and metabolism
+map00543,hsa00543,Exopolysaccharide biosynthesis,Exopolysaccharide biosynthesis,Metabolism,Glycan biosynthesis and metabolism
+map00730,hsa00730,Thiamine metabolism,Thiamine metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00740,hsa00740,Riboflavin metabolism,Riboflavin metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00750,hsa00750,Vitamin B6 metabolism,Vitamin B6 metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00760,hsa00760,Nicotinate and nicotinamide metabolism,Nicotinate and nicotinamide metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00770,hsa00770,Pantothenate and CoA biosynthesis,Pantothenate and CoA biosynthesis,Metabolism,Metabolism of cofactors and vitamins
+map00780,hsa00780,Biotin metabolism,Biotin metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00785,hsa00785,Lipoic acid metabolism,Lipoic acid metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00790,hsa00790,Folate biosynthesis,Folate biosynthesis,Metabolism,Metabolism of cofactors and vitamins
+map00670,hsa00670,One carbon pool by folate,One carbon pool by folate,Metabolism,Metabolism of cofactors and vitamins
+map00830,hsa00830,Retinol metabolism,Retinol metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00860,hsa00860,Porphyrin metabolism,Porphyrin metabolism,Metabolism,Metabolism of cofactors and vitamins
+map00130,hsa00130,Ubiquinone and other terpenoid-quinone biosynthesis,Ubiquinone and other terpenoid-quinone biosynthesis,Metabolism,Metabolism of cofactors and vitamins
+map00900,hsa00900,Terpenoid backbone biosynthesis,Terpenoid backbone biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00902,hsa00902,Monoterpenoid biosynthesis,Monoterpenoid biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00909,hsa00909,Sesquiterpenoid and triterpenoid biosynthesis,Sesquiterpenoid and triterpenoid biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00904,hsa00904,Diterpenoid biosynthesis,Diterpenoid biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00906,hsa00906,Carotenoid biosynthesis,Carotenoid biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00905,hsa00905,Brassinosteroid biosynthesis,Brassinosteroid biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00981,hsa00981,Insect hormone biosynthesis,Insect hormone biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00908,hsa00908,Zeatin biosynthesis,Zeatin biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00903,hsa00903,Limonene degradation,Limonene degradation,Metabolism,Metabolism of terpenoids and polyketides
+map00907,hsa00907,"Pinene, camphor and geraniol degradation","Pinene, camphor and geraniol degradation",Metabolism,Metabolism of terpenoids and polyketides
+map01052,hsa01052,Type I polyketide structures,Type I polyketide structures,Metabolism,Metabolism of terpenoids and polyketides
+map00522,hsa00522,"Biosynthesis of 12-, 14- and 16-membered macrolides","Biosynthesis of 12-, 14- and 16-membered macrolides",Metabolism,Metabolism of terpenoids and polyketides
+map01051,hsa01051,Biosynthesis of ansamycins,Biosynthesis of ansamycins,Metabolism,Metabolism of terpenoids and polyketides
+map01059,hsa01059,Biosynthesis of enediyne antibiotics,Biosynthesis of enediyne antibiotics,Metabolism,Metabolism of terpenoids and polyketides
+map01056,hsa01056,Biosynthesis of type II polyketide backbone,Biosynthesis of type II polyketide backbone,Metabolism,Metabolism of terpenoids and polyketides
+map01057,hsa01057,Biosynthesis of type II polyketide products,Biosynthesis of type II polyketide products,Metabolism,Metabolism of terpenoids and polyketides
+map00253,hsa00253,Tetracycline biosynthesis,Tetracycline biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map00523,hsa00523,Polyketide sugar unit biosynthesis,Polyketide sugar unit biosynthesis,Metabolism,Metabolism of terpenoids and polyketides
+map01054,hsa01054,Nonribosomal peptide structures,Nonribosomal peptide structures,Metabolism,Metabolism of terpenoids and polyketides
+map01053,hsa01053,Biosynthesis of siderophore group nonribosomal peptides,Biosynthesis of siderophore group nonribosomal peptides,Metabolism,Metabolism of terpenoids and polyketides
+map01055,hsa01055,Biosynthesis of vancomycin group antibiotics,Biosynthesis of vancomycin group antibiotics,Metabolism,Metabolism of terpenoids and polyketides
+map00940,hsa00940,Phenylpropanoid biosynthesis,Phenylpropanoid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00945,hsa00945,"Stilbenoid, diarylheptanoid and gingerol biosynthesis","Stilbenoid, diarylheptanoid and gingerol biosynthesis",Metabolism,Biosynthesis of other secondary metabolites
+map00941,hsa00941,Flavonoid biosynthesis,Flavonoid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00944,hsa00944,Flavone and flavonol biosynthesis,Flavone and flavonol biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00942,hsa00942,Anthocyanin biosynthesis,Anthocyanin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00943,hsa00943,Isoflavonoid biosynthesis,Isoflavonoid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00946,hsa00946,Degradation of flavonoids,Degradation of flavonoids,Metabolism,Biosynthesis of other secondary metabolites
+map00901,hsa00901,Indole alkaloid biosynthesis,Indole alkaloid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00403,hsa00403,Indole diterpene alkaloid biosynthesis,Indole diterpene alkaloid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00950,hsa00950,Isoquinoline alkaloid biosynthesis,Isoquinoline alkaloid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00960,hsa00960,"Tropane, piperidine and pyridine alkaloid biosynthesis","Tropane, piperidine and pyridine alkaloid biosynthesis",Metabolism,Biosynthesis of other secondary metabolites
+map00996,hsa00996,Biosynthesis of various alkaloids,Biosynthesis of various alkaloids,Metabolism,Biosynthesis of other secondary metabolites
+map00232,hsa00232,Caffeine metabolism,Caffeine metabolism,Metabolism,Biosynthesis of other secondary metabolites
+map00965,hsa00965,Betalain biosynthesis,Betalain biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00966,hsa00966,Glucosinolate biosynthesis,Glucosinolate biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00402,hsa00402,Benzoxazinoid biosynthesis,Benzoxazinoid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00311,hsa00311,Penicillin and cephalosporin biosynthesis,Penicillin and cephalosporin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00332,hsa00332,Carbapenem biosynthesis,Carbapenem biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00261,hsa00261,Monobactam biosynthesis,Monobactam biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00331,hsa00331,Clavulanic acid biosynthesis,Clavulanic acid biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00521,hsa00521,Streptomycin biosynthesis,Streptomycin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00524,hsa00524,"Neomycin, kanamycin and gentamicin biosynthesis","Neomycin, kanamycin and gentamicin biosynthesis",Metabolism,Biosynthesis of other secondary metabolites
+map00525,hsa00525,Acarbose and validamycin biosynthesis,Acarbose and validamycin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00401,hsa00401,Novobiocin biosynthesis,Novobiocin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00404,hsa00404,Staurosporine biosynthesis,Staurosporine biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00405,hsa00405,Phenazine biosynthesis,Phenazine biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00333,hsa00333,Prodigiosin biosynthesis,Prodigiosin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00254,hsa00254,Aflatoxin biosynthesis,Aflatoxin biosynthesis,Metabolism,Biosynthesis of other secondary metabolites
+map00975,hsa00975,Biosynthesis of various siderophores,Biosynthesis of various siderophores,Metabolism,Biosynthesis of other secondary metabolites
+map00998,hsa00998,Biosynthesis of various antibiotics,Biosynthesis of various antibiotics,Metabolism,Biosynthesis of other secondary metabolites
+map00999,hsa00999,Biosynthesis of various plant secondary metabolites,Biosynthesis of various plant secondary metabolites,Metabolism,Biosynthesis of other secondary metabolites
+map00997,hsa00997,Biosynthesis of various other secondary metabolites,Biosynthesis of various other secondary metabolites,Metabolism,Biosynthesis of other secondary metabolites
+map00362,hsa00362,Benzoate degradation,Benzoate degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00627,hsa00627,Aminobenzoate degradation,Aminobenzoate degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00364,hsa00364,Fluorobenzoate degradation,Fluorobenzoate degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00625,hsa00625,Chloroalkane and chloroalkene degradation,Chloroalkane and chloroalkene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00361,hsa00361,Chlorocyclohexane and chlorobenzene degradation,Chlorocyclohexane and chlorobenzene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00623,hsa00623,Toluene degradation,Toluene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00622,hsa00622,Xylene degradation,Xylene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00633,hsa00633,Nitrotoluene degradation,Nitrotoluene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00642,hsa00642,Ethylbenzene degradation,Ethylbenzene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00643,hsa00643,Styrene degradation,Styrene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00791,hsa00791,Atrazine degradation,Atrazine degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00930,hsa00930,Caprolactam degradation,Caprolactam degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00363,hsa00363,Bisphenol degradation,Bisphenol degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00621,hsa00621,Dioxin degradation,Dioxin degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00626,hsa00626,Naphthalene degradation,Naphthalene degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00624,hsa00624,Polycyclic aromatic hydrocarbon degradation,Polycyclic aromatic hydrocarbon degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00365,hsa00365,Furfural degradation,Furfural degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00984,hsa00984,Steroid degradation,Steroid degradation,Metabolism,Xenobiotics biodegradation and metabolism
+map00980,hsa00980,Metabolism of xenobiotics by cytochrome P450,Metabolism of xenobiotics by cytochrome P450,Metabolism,Xenobiotics biodegradation and metabolism
+map00982,hsa00982,Drug metabolism - cytochrome P450,Drug metabolism - cytochrome P450,Metabolism,Xenobiotics biodegradation and metabolism
+map00983,hsa00983,Drug metabolism - other enzymes,Drug metabolism - other enzymes,Metabolism,Xenobiotics biodegradation and metabolism
+map01010,hsa01010,Overview of biosynthetic pathways,Overview of biosynthetic pathways,Metabolism,Chemical structure transformation maps
+map01060,hsa01060,Biosynthesis of plant secondary metabolites,Biosynthesis of plant secondary metabolites,Metabolism,Chemical structure transformation maps
+map01061,hsa01061,Biosynthesis of phenylpropanoids,Biosynthesis of phenylpropanoids,Metabolism,Chemical structure transformation maps
+map01062,hsa01062,Biosynthesis of terpenoids and steroids,Biosynthesis of terpenoids and steroids,Metabolism,Chemical structure transformation maps
+map01063,hsa01063,Biosynthesis of alkaloids derived from shikimate pathway,Biosynthesis of alkaloids derived from shikimate pathway,Metabolism,Chemical structure transformation maps
+map01064,hsa01064,"Biosynthesis of alkaloids derived from ornithine, lysine and nicotinic acid","Biosynthesis of alkaloids derived from ornithine, lysine and nicotinic acid",Metabolism,Chemical structure transformation maps
+map01065,hsa01065,Biosynthesis of alkaloids derived from histidine and purine,Biosynthesis of alkaloids derived from histidine and purine,Metabolism,Chemical structure transformation maps
+map01066,hsa01066,Biosynthesis of alkaloids derived from terpenoid and polyketide,Biosynthesis of alkaloids derived from terpenoid and polyketide,Metabolism,Chemical structure transformation maps
+map01070,hsa01070,Biosynthesis of plant hormones,Biosynthesis of plant hormones,Metabolism,Chemical structure transformation maps
+map03020,hsa03020,RNA polymerase,RNA polymerase,Genetic Information Processing,Transcription
+map03022,hsa03022,Basal transcription factors,Basal transcription factors,Genetic Information Processing,Transcription
+map03040,hsa03040,Spliceosome,Spliceosome,Genetic Information Processing,Transcription
+map03010,hsa03010,Ribosome,Ribosome,Genetic Information Processing,Translation
+map00970,hsa00970,Aminoacyl-tRNA biosynthesis,Aminoacyl-tRNA biosynthesis,Genetic Information Processing,Translation
+map03013,hsa03013,Nucleocytoplasmic transport,Nucleocytoplasmic transport,Genetic Information Processing,Translation
+map03015,hsa03015,mRNA surveillance pathway,mRNA surveillance pathway,Genetic Information Processing,Translation
+map03008,hsa03008,Ribosome biogenesis in eukaryotes,Ribosome biogenesis in eukaryotes,Genetic Information Processing,Translation
+map03060,hsa03060,Protein export,Protein export,Genetic Information Processing,"Folding, sorting and degradation"
+map04141,hsa04141,Protein processing in endoplasmic reticulum,Protein processing in endoplasmic reticulum,Genetic Information Processing,"Folding, sorting and degradation"
+map04130,hsa04130,SNARE interactions in vesicular transport,SNARE interactions in vesicular transport,Genetic Information Processing,"Folding, sorting and degradation"
+map04120,hsa04120,Ubiquitin mediated proteolysis,Ubiquitin mediated proteolysis,Genetic Information Processing,"Folding, sorting and degradation"
+map04122,hsa04122,Sulfur relay system,Sulfur relay system,Genetic Information Processing,"Folding, sorting and degradation"
+map03050,hsa03050,Proteasome,Proteasome,Genetic Information Processing,"Folding, sorting and degradation"
+map03018,hsa03018,RNA degradation,RNA degradation,Genetic Information Processing,"Folding, sorting and degradation"
+map03030,hsa03030,DNA replication,DNA replication,Genetic Information Processing,Replication and repair
+map03410,hsa03410,Base excision repair,Base excision repair,Genetic Information Processing,Replication and repair
+map03420,hsa03420,Nucleotide excision repair,Nucleotide excision repair,Genetic Information Processing,Replication and repair
+map03430,hsa03430,Mismatch repair,Mismatch repair,Genetic Information Processing,Replication and repair
+map03440,hsa03440,Homologous recombination,Homologous recombination,Genetic Information Processing,Replication and repair
+map03450,hsa03450,Non-homologous end-joining,Non-homologous end-joining,Genetic Information Processing,Replication and repair
+map03460,hsa03460,Fanconi anemia pathway,Fanconi anemia pathway,Genetic Information Processing,Replication and repair
+map03082,hsa03082,ATP-dependent chromatin remodeling,ATP-dependent chromatin remodeling,Genetic Information Processing,Chromosome
+map03083,hsa03083,Polycomb repressive complex,Polycomb repressive complex,Genetic Information Processing,Chromosome
+map03230,hsa03230,Viral genome structure,Viral genome structure,Genetic Information Processing,Information processing in viruses
+map03240,hsa03240,Viral replication,Viral replication,Genetic Information Processing,Information processing in viruses
+map03250,hsa03250,Viral life cycle - HIV-1,Viral life cycle - HIV-1,Genetic Information Processing,Information processing in viruses
+map03260,hsa03260,Virion - Human immunodeficiency virus,Virion - Human immunodeficiency virus,Genetic Information Processing,Information processing in viruses
+map03271,hsa03271,Virion - Rotavirus,Virion - Rotavirus,Genetic Information Processing,Information processing in viruses
+map03262,hsa03262,Virion - Coronavirus,Virion - Coronavirus,Genetic Information Processing,Information processing in viruses
+map03261,hsa03261,Virion - Influenza virus,Virion - Influenza virus,Genetic Information Processing,Information processing in viruses
+map03263,hsa03263,Virion - Enterovirus,Virion - Enterovirus,Genetic Information Processing,Information processing in viruses
+map03264,hsa03264,Virion - Flavivirus and Alphavirus,Virion - Flavivirus and Alphavirus,Genetic Information Processing,Information processing in viruses
+map03265,hsa03265,"Virion - Ebolavirus, Lyssavirus and Morbillivirus","Virion - Ebolavirus, Lyssavirus and Morbillivirus",Genetic Information Processing,Information processing in viruses
+map03273,hsa03273,Virion - Lassa virus and SFTS virus,Virion - Lassa virus and SFTS virus,Genetic Information Processing,Information processing in viruses
+map03272,hsa03272,Virion - Hepatitis viruses,Virion - Hepatitis viruses,Genetic Information Processing,Information processing in viruses
+map03266,hsa03266,Virion - Herpesvirus,Virion - Herpesvirus,Genetic Information Processing,Information processing in viruses
+map03268,hsa03268,Virion - Orthopoxvirus,Virion - Orthopoxvirus,Genetic Information Processing,Information processing in viruses
+map03267,hsa03267,Virion - Adenovirus,Virion - Adenovirus,Genetic Information Processing,Information processing in viruses
+map03259,hsa03259,Virion - Bacteriophages T4 and T7,Virion - Bacteriophages T4 and T7,Genetic Information Processing,Information processing in viruses
+map03258,hsa03258,Virion - Bacteriophage lambda,Virion - Bacteriophage lambda,Genetic Information Processing,Information processing in viruses
+map02010,hsa02010,ABC transporters,ABC transporters,Environmental Information Processing,Membrane transport
+map02060,hsa02060,Phosphotransferase system (PTS),Phosphotransferase system,Environmental Information Processing,Membrane transport
+map03070,hsa03070,Bacterial secretion system,Bacterial secretion system,Environmental Information Processing,Membrane transport
+map02020,hsa02020,Two-component system,Two-component system,Environmental Information Processing,Signal transduction
+map04010,hsa04010,MAPK signaling pathway,MAPK signaling pathway,Environmental Information Processing,Signal transduction
+map04013,hsa04013,MAPK signaling pathway - fly,MAPK signaling pathway - fly,Environmental Information Processing,Signal transduction
+map04016,hsa04016,MAPK signaling pathway - plant,MAPK signaling pathway - plant,Environmental Information Processing,Signal transduction
+map04011,hsa04011,MAPK signaling pathway - yeast,MAPK signaling pathway - yeast,Environmental Information Processing,Signal transduction
+map04012,hsa04012,ErbB signaling pathway,ErbB signaling pathway,Environmental Information Processing,Signal transduction
+map04014,hsa04014,Ras signaling pathway,Ras signaling pathway,Environmental Information Processing,Signal transduction
+map04015,hsa04015,Rap1 signaling pathway,Rap1 signaling pathway,Environmental Information Processing,Signal transduction
+map04310,hsa04310,Wnt signaling pathway,Wnt signaling pathway,Environmental Information Processing,Signal transduction
+map04330,hsa04330,Notch signaling pathway,Notch signaling pathway,Environmental Information Processing,Signal transduction
+map04340,hsa04340,Hedgehog signaling pathway,Hedgehog signaling pathway,Environmental Information Processing,Signal transduction
+map04341,hsa04341,Hedgehog signaling pathway - fly,Hedgehog signaling pathway - fly,Environmental Information Processing,Signal transduction
+map04350,hsa04350,TGF-beta signaling pathway,TGF-beta signaling pathway,Environmental Information Processing,Signal transduction
+map04390,hsa04390,Hippo signaling pathway,Hippo signaling pathway,Environmental Information Processing,Signal transduction
+map04391,hsa04391,Hippo signaling pathway - fly,Hippo signaling pathway - fly,Environmental Information Processing,Signal transduction
+map04392,hsa04392,Hippo signaling pathway - multiple species,Hippo signaling pathway - multiple species,Environmental Information Processing,Signal transduction
+map04370,hsa04370,VEGF signaling pathway,VEGF signaling pathway,Environmental Information Processing,Signal transduction
+map04371,hsa04371,Apelin signaling pathway,Apelin signaling pathway,Environmental Information Processing,Signal transduction
+map04630,hsa04630,JAK-STAT signaling pathway,JAK-STAT signaling pathway,Environmental Information Processing,Signal transduction
+map04064,hsa04064,NF-kappa B signaling pathway,NF-kappa B signaling pathway,Environmental Information Processing,Signal transduction
+map04668,hsa04668,TNF signaling pathway,TNF signaling pathway,Environmental Information Processing,Signal transduction
+map04066,hsa04066,HIF-1 signaling pathway,HIF-1 signaling pathway,Environmental Information Processing,Signal transduction
+map04068,hsa04068,FoxO signaling pathway,FoxO signaling pathway,Environmental Information Processing,Signal transduction
+map04020,hsa04020,Calcium signaling pathway,Calcium signaling pathway,Environmental Information Processing,Signal transduction
+map04070,hsa04070,Phosphatidylinositol signaling system,Phosphatidylinositol signaling system,Environmental Information Processing,Signal transduction
+map04072,hsa04072,Phospholipase D signaling pathway,Phospholipase D signaling pathway,Environmental Information Processing,Signal transduction
+map04071,hsa04071,Sphingolipid signaling pathway,Sphingolipid signaling pathway,Environmental Information Processing,Signal transduction
+map04024,hsa04024,cAMP signaling pathway,cAMP signaling pathway,Environmental Information Processing,Signal transduction
+map04022,hsa04022,cGMP-PKG signaling pathway,cGMP-PKG signaling pathway,Environmental Information Processing,Signal transduction
+map04151,hsa04151,PI3K-Akt signaling pathway,PI3K-Akt signaling pathway,Environmental Information Processing,Signal transduction
+map04152,hsa04152,AMPK signaling pathway,AMPK signaling pathway,Environmental Information Processing,Signal transduction
+map04150,hsa04150,mTOR signaling pathway,mTOR signaling pathway,Environmental Information Processing,Signal transduction
+map04075,hsa04075,Plant hormone signal transduction,Plant hormone signal transduction,Environmental Information Processing,Signal transduction
+map04080,hsa04080,Neuroactive ligand-receptor interaction,Neuroactive ligand-receptor interaction,Environmental Information Processing,Signaling molecules and interaction
+map04082,hsa04082,Neuroactive ligand signaling,Neuroactive ligand signaling,Environmental Information Processing,Signaling molecules and interaction
+map04081,hsa04081,Hormone signaling,Hormone signaling,Environmental Information Processing,Signaling molecules and interaction
+map04060,hsa04060,Cytokine-cytokine receptor interaction,Cytokine-cytokine receptor interaction,Environmental Information Processing,Signaling molecules and interaction
+map04061,hsa04061,Viral protein interaction with cytokine and cytokine receptor,Viral protein interaction with cytokine and cytokine receptor,Environmental Information Processing,Signaling molecules and interaction
+map04512,hsa04512,ECM-receptor interaction,ECM-receptor interaction,Environmental Information Processing,Signaling molecules and interaction
+map04514,hsa04514,Cell adhesion molecule (CAM) interaction,Cell adhesion molecule (CAM) interaction,Environmental Information Processing,Signaling molecules and interaction
+map04517,hsa04517,IgSF CAM signaling,IgSF CAM signaling,Environmental Information Processing,Signaling molecules and interaction
+map04518,hsa04518,Integrin signaling,Integrin signaling,Environmental Information Processing,Signaling molecules and interaction
+map04519,hsa04519,Cadherin signaling,Cadherin signaling,Environmental Information Processing,Signaling molecules and interaction
+map04144,hsa04144,Endocytosis,Endocytosis,Cellular Processes,Transport and catabolism
+map04145,hsa04145,Phagosome,Phagosome,Cellular Processes,Transport and catabolism
+map04142,hsa04142,Lysosome biogenesis,Lysosome biogenesis,Cellular Processes,Transport and catabolism
+map04146,hsa04146,Peroxisome,Peroxisome,Cellular Processes,Transport and catabolism
+map04140,hsa04140,Autophagy - animal,Autophagy - animal,Cellular Processes,Transport and catabolism
+map04138,hsa04138,Autophagy - yeast,Autophagy - yeast,Cellular Processes,Transport and catabolism
+map04136,hsa04136,Autophagy - other,Autophagy - other,Cellular Processes,Transport and catabolism
+map04137,hsa04137,Mitophagy - animal,Mitophagy - animal,Cellular Processes,Transport and catabolism
+map04139,hsa04139,Mitophagy - yeast,Mitophagy - yeast,Cellular Processes,Transport and catabolism
+map04148,hsa04148,Efferocytosis,Efferocytosis,Cellular Processes,Transport and catabolism
+map04110,hsa04110,Cell cycle,Cell cycle,Cellular Processes,Cell growth and death
+map04111,hsa04111,Cell cycle - yeast,Cell cycle - yeast,Cellular Processes,Cell growth and death
+map04112,hsa04112,Cell cycle - Caulobacter,Cell cycle - Caulobacter,Cellular Processes,Cell growth and death
+map04113,hsa04113,Meiosis - yeast,Meiosis - yeast,Cellular Processes,Cell growth and death
+map04114,hsa04114,Oocyte meiosis,Oocyte meiosis,Cellular Processes,Cell growth and death
+map04210,hsa04210,Apoptosis,Apoptosis,Cellular Processes,Cell growth and death
+map04214,hsa04214,Apoptosis - fly,Apoptosis - fly,Cellular Processes,Cell growth and death
+map04215,hsa04215,Apoptosis - multiple species,Apoptosis - multiple species,Cellular Processes,Cell growth and death
+map04216,hsa04216,Ferroptosis,Ferroptosis,Cellular Processes,Cell growth and death
+map04217,hsa04217,Necroptosis,Necroptosis,Cellular Processes,Cell growth and death
+map04115,hsa04115,p53 signaling pathway,p53 signaling pathway,Cellular Processes,Cell growth and death
+map04218,hsa04218,Cellular senescence,Cellular senescence,Cellular Processes,Cell growth and death
+map04510,hsa04510,Focal adhesion,Focal adhesion,Cellular Processes,Cellular community - eukaryotes
+map04520,hsa04520,Adherens junction,Adherens junction,Cellular Processes,Cellular community - eukaryotes
+map04530,hsa04530,Tight junction,Tight junction,Cellular Processes,Cellular community - eukaryotes
+map04540,hsa04540,Gap junction,Gap junction,Cellular Processes,Cellular community - eukaryotes
+map04550,hsa04550,Signaling pathways regulating pluripotency of stem cells,Signaling pathways regulating pluripotency of stem cells,Cellular Processes,Cellular community - eukaryotes
+map02024,hsa02024,Quorum sensing,Quorum sensing,Cellular Processes,Cellular community - prokaryotes
+map05111,hsa05111,Biofilm formation - Vibrio cholerae,Biofilm formation - Vibrio cholerae,Cellular Processes,Cellular community - prokaryotes
+map02025,hsa02025,Biofilm formation - Pseudomonas aeruginosa,Biofilm formation - Pseudomonas aeruginosa,Cellular Processes,Cellular community - prokaryotes
+map02026,hsa02026,Biofilm formation - Escherichia coli,Biofilm formation - Escherichia coli,Cellular Processes,Cellular community - prokaryotes
+map02030,hsa02030,Bacterial chemotaxis,Bacterial chemotaxis,Cellular Processes,Cell motility
+map02040,hsa02040,Flagellar assembly,Flagellar assembly,Cellular Processes,Cell motility
+map04814,hsa04814,Motor proteins,Motor proteins,Cellular Processes,Cell motility
+map04820,hsa04820,Cytoskeleton in muscle cells,Cytoskeleton in muscle cells,Cellular Processes,Cell motility
+map04810,hsa04810,Regulation of actin cytoskeleton,Regulation of actin cytoskeleton,Cellular Processes,Cell motility
+map04640,hsa04640,Hematopoietic cell lineage,Hematopoietic cell lineage,Organismal Systems,Immune system
+map04610,hsa04610,Complement and coagulation cascades,Complement and coagulation cascades,Organismal Systems,Immune system
+map04611,hsa04611,Platelet activation,Platelet activation,Organismal Systems,Immune system
+map04613,hsa04613,Neutrophil extracellular trap formation,Neutrophil extracellular trap formation,Organismal Systems,Immune system
+map04620,hsa04620,Toll-like receptor signaling pathway,Toll-like receptor signaling pathway,Organismal Systems,Immune system
+map04624,hsa04624,Toll and Imd signaling pathway,Toll and Imd signaling pathway,Organismal Systems,Immune system
+map04621,hsa04621,NOD-like receptor signaling pathway,NOD-like receptor signaling pathway,Organismal Systems,Immune system
+map04622,hsa04622,RIG-I-like receptor signaling pathway,RIG-I-like receptor signaling pathway,Organismal Systems,Immune system
+map04623,hsa04623,Cytosolic DNA-sensing pathway,Cytosolic DNA-sensing pathway,Organismal Systems,Immune system
+map04625,hsa04625,C-type lectin receptor signaling pathway,C-type lectin receptor signaling pathway,Organismal Systems,Immune system
+map04650,hsa04650,Natural killer cell mediated cytotoxicity,Natural killer cell mediated cytotoxicity,Organismal Systems,Immune system
+map04612,hsa04612,Antigen processing and presentation,Antigen processing and presentation,Organismal Systems,Immune system
+map04660,hsa04660,T cell receptor signaling pathway,T cell receptor signaling pathway,Organismal Systems,Immune system
+map04658,hsa04658,Th1 and Th2 cell differentiation,Th1 and Th2 cell differentiation,Organismal Systems,Immune system
+map04659,hsa04659,Th17 cell differentiation,Th17 cell differentiation,Organismal Systems,Immune system
+map04657,hsa04657,IL-17 signaling pathway,IL-17 signaling pathway,Organismal Systems,Immune system
+map04662,hsa04662,B cell receptor signaling pathway,B cell receptor signaling pathway,Organismal Systems,Immune system
+map04664,hsa04664,Fc epsilon RI signaling pathway,Fc epsilon RI signaling pathway,Organismal Systems,Immune system
+map04666,hsa04666,Fc gamma R-mediated phagosome formation,Fc gamma R-mediated phagosome formation,Organismal Systems,Immune system
+map04670,hsa04670,Leukocyte transendothelial migration,Leukocyte transendothelial migration,Organismal Systems,Immune system
+map04672,hsa04672,Intestinal immune network for IgA production,Intestinal immune network for IgA production,Organismal Systems,Immune system
+map04062,hsa04062,Chemokine signaling pathway,Chemokine signaling pathway,Organismal Systems,Immune system
+map04911,hsa04911,Insulin secretion,Insulin secretion,Organismal Systems,Endocrine system
+map04910,hsa04910,Insulin signaling pathway,Insulin signaling pathway,Organismal Systems,Endocrine system
+map04922,hsa04922,Glucagon signaling pathway,Glucagon signaling pathway,Organismal Systems,Endocrine system
+map04923,hsa04923,Regulation of lipolysis in adipocytes,Regulation of lipolysis in adipocytes,Organismal Systems,Endocrine system
+map04920,hsa04920,Adipocytokine signaling pathway,Adipocytokine signaling pathway,Organismal Systems,Endocrine system
+map03320,hsa03320,PPAR signaling pathway,PPAR signaling pathway,Organismal Systems,Endocrine system
+map04929,hsa04929,GnRH secretion,GnRH secretion,Organismal Systems,Endocrine system
+map04912,hsa04912,GnRH signaling pathway,GnRH signaling pathway,Organismal Systems,Endocrine system
+map04913,hsa04913,Ovarian steroidogenesis,Ovarian steroidogenesis,Organismal Systems,Endocrine system
+map04915,hsa04915,Estrogen signaling pathway,Estrogen signaling pathway,Organismal Systems,Endocrine system
+map04914,hsa04914,Progesterone-mediated oocyte maturation,Progesterone-mediated oocyte maturation,Organismal Systems,Endocrine system
+map04917,hsa04917,Prolactin signaling pathway,Prolactin signaling pathway,Organismal Systems,Endocrine system
+map04921,hsa04921,Oxytocin signaling pathway,Oxytocin signaling pathway,Organismal Systems,Endocrine system
+map04926,hsa04926,Relaxin signaling pathway,Relaxin signaling pathway,Organismal Systems,Endocrine system
+map04935,hsa04935,"Growth hormone synthesis, secretion and action","Growth hormone synthesis, secretion and action",Organismal Systems,Endocrine system
+map04918,hsa04918,Thyroid hormone synthesis,Thyroid hormone synthesis,Organismal Systems,Endocrine system
+map04919,hsa04919,Thyroid hormone signaling pathway,Thyroid hormone signaling pathway,Organismal Systems,Endocrine system
+map04928,hsa04928,"Parathyroid hormone synthesis, secretion and action","Parathyroid hormone synthesis, secretion and action",Organismal Systems,Endocrine system
+map04916,hsa04916,Melanogenesis,Melanogenesis,Organismal Systems,Endocrine system
+map04924,hsa04924,Renin secretion,Renin secretion,Organismal Systems,Endocrine system
+map04614,hsa04614,Renin-angiotensin system,Renin-angiotensin system,Organismal Systems,Endocrine system
+map04925,hsa04925,Aldosterone synthesis and secretion,Aldosterone synthesis and secretion,Organismal Systems,Endocrine system
+map04927,hsa04927,Cortisol synthesis and secretion,Cortisol synthesis and secretion,Organismal Systems,Endocrine system
+map04260,hsa04260,Cardiac muscle contraction,Cardiac muscle contraction,Organismal Systems,Circulatory system
+map04261,hsa04261,Adrenergic signaling in cardiomyocytes,Adrenergic signaling in cardiomyocytes,Organismal Systems,Circulatory system
+map04270,hsa04270,Vascular smooth muscle contraction,Vascular smooth muscle contraction,Organismal Systems,Circulatory system
+map04970,hsa04970,Salivary secretion,Salivary secretion,Organismal Systems,Digestive system
+map04971,hsa04971,Gastric acid secretion,Gastric acid secretion,Organismal Systems,Digestive system
+map04972,hsa04972,Pancreatic secretion,Pancreatic secretion,Organismal Systems,Digestive system
+map04976,hsa04976,Bile secretion,Bile secretion,Organismal Systems,Digestive system
+map04973,hsa04973,Carbohydrate digestion and absorption,Carbohydrate digestion and absorption,Organismal Systems,Digestive system
+map04974,hsa04974,Protein digestion and absorption,Protein digestion and absorption,Organismal Systems,Digestive system
+map04975,hsa04975,Fat digestion and absorption,Fat digestion and absorption,Organismal Systems,Digestive system
+map04979,hsa04979,Cholesterol metabolism,Cholesterol metabolism,Organismal Systems,Digestive system
+map04977,hsa04977,Vitamin digestion and absorption,Vitamin digestion and absorption,Organismal Systems,Digestive system
+map04981,hsa04981,Folate transport and metabolism,Folate transport and metabolism,Organismal Systems,Digestive system
+map04980,hsa04980,Cobalamin transport and metabolism,Cobalamin transport and metabolism,Organismal Systems,Digestive system
+map04978,hsa04978,Mineral absorption,Mineral absorption,Organismal Systems,Digestive system
+map04962,hsa04962,Vasopressin-regulated water reabsorption,Vasopressin-regulated water reabsorption,Organismal Systems,Excretory system
+map04960,hsa04960,Aldosterone-regulated sodium reabsorption,Aldosterone-regulated sodium reabsorption,Organismal Systems,Excretory system
+map04961,hsa04961,Endocrine and other factor-regulated calcium reabsorption,Endocrine and other factor-regulated calcium reabsorption,Organismal Systems,Excretory system
+map04964,hsa04964,Proximal tubule bicarbonate reclamation,Proximal tubule bicarbonate reclamation,Organismal Systems,Excretory system
+map04966,hsa04966,Collecting duct acid secretion,Collecting duct acid secretion,Organismal Systems,Excretory system
+map04724,hsa04724,Glutamatergic synapse,Glutamatergic synapse,Organismal Systems,Nervous system
+map04727,hsa04727,GABAergic synapse,GABAergic synapse,Organismal Systems,Nervous system
+map04725,hsa04725,Cholinergic synapse,Cholinergic synapse,Organismal Systems,Nervous system
+map04728,hsa04728,Dopaminergic synapse,Dopaminergic synapse,Organismal Systems,Nervous system
+map04726,hsa04726,Serotonergic synapse,Serotonergic synapse,Organismal Systems,Nervous system
+map04720,hsa04720,Long-term potentiation,Long-term potentiation,Organismal Systems,Nervous system
+map04730,hsa04730,Long-term depression,Long-term depression,Organismal Systems,Nervous system
+map04723,hsa04723,Retrograde endocannabinoid signaling,Retrograde endocannabinoid signaling,Organismal Systems,Nervous system
+map04721,hsa04721,Synaptic vesicle cycle,Synaptic vesicle cycle,Organismal Systems,Nervous system
+map04722,hsa04722,Neurotrophin signaling pathway,Neurotrophin signaling pathway,Organismal Systems,Nervous system
+map04744,hsa04744,Phototransduction,Phototransduction,Organismal Systems,Sensory system
+map04745,hsa04745,Phototransduction - fly,Phototransduction - fly,Organismal Systems,Sensory system
+map04740,hsa04740,Olfactory transduction,Olfactory transduction,Organismal Systems,Sensory system
+map04742,hsa04742,Taste transduction,Taste transduction,Organismal Systems,Sensory system
+map04750,hsa04750,Inflammatory mediator regulation of TRP channels,Inflammatory mediator regulation of TRP channels,Organismal Systems,Sensory system
+map04320,hsa04320,Dorso-ventral axis formation,Dorso-ventral axis formation,Organismal Systems,Development and regeneration
+map04360,hsa04360,Axon guidance,Axon guidance,Organismal Systems,Development and regeneration
+map04361,hsa04361,Axon regeneration,Axon regeneration,Organismal Systems,Development and regeneration
+map04380,hsa04380,Osteoclast differentiation,Osteoclast differentiation,Organismal Systems,Development and regeneration
+map04382,hsa04382,Cornified envelope formation,Cornified envelope formation,Organismal Systems,Development and regeneration
+map04211,hsa04211,Longevity regulating pathway,Longevity regulating pathway,Organismal Systems,Aging
+map04212,hsa04212,Longevity regulating pathway - worm,Longevity regulating pathway - worm,Organismal Systems,Aging
+map04213,hsa04213,Longevity regulating pathway - multiple species,Longevity regulating pathway - multiple species,Organismal Systems,Aging
+map04710,hsa04710,Circadian rhythm,Circadian rhythm,Organismal Systems,Environmental adaptation
+map04713,hsa04713,Circadian entrainment,Circadian entrainment,Organismal Systems,Environmental adaptation
+map04711,hsa04711,Circadian rhythm - fly,Circadian rhythm - fly,Organismal Systems,Environmental adaptation
+map04712,hsa04712,Circadian rhythm - plant,Circadian rhythm - plant,Organismal Systems,Environmental adaptation
+map04714,hsa04714,Thermogenesis,Thermogenesis,Organismal Systems,Environmental adaptation
+map04626,hsa04626,Plant-pathogen interaction,Plant-pathogen interaction,Organismal Systems,Environmental adaptation
+map05200,hsa05200,Pathways in cancer,Pathways in cancer,Human Diseases,Cancer: overview
+map05202,hsa05202,Transcriptional misregulation in cancer,Transcriptional misregulation in cancer,Human Diseases,Cancer: overview
+map05206,hsa05206,MicroRNAs in cancer,MicroRNAs in cancer,Human Diseases,Cancer: overview
+map05205,hsa05205,Proteoglycans in cancer,Proteoglycans in cancer,Human Diseases,Cancer: overview
+map05204,hsa05204,Chemical carcinogenesis - DNA adducts,Chemical carcinogenesis - DNA adducts,Human Diseases,Cancer: overview
+map05207,hsa05207,Chemical carcinogenesis - receptor activation,Chemical carcinogenesis - receptor activation,Human Diseases,Cancer: overview
+map05208,hsa05208,Chemical carcinogenesis - reactive oxygen species,Chemical carcinogenesis - reactive oxygen species,Human Diseases,Cancer: overview
+map05203,hsa05203,Viral carcinogenesis,Viral carcinogenesis,Human Diseases,Cancer: overview
+map05230,hsa05230,Central carbon metabolism in cancer,Central carbon metabolism in cancer,Human Diseases,Cancer: overview
+map05231,hsa05231,Choline metabolism in cancer,Choline metabolism in cancer,Human Diseases,Cancer: overview
+map05235,hsa05235,PD-L1 expression and PD-1 checkpoint pathway in cancer,PD-L1 expression and PD-1 checkpoint pathway in cancer,Human Diseases,Cancer: overview
+map05210,hsa05210,Colorectal cancer,Colorectal cancer,Human Diseases,Cancer: specific types
+map05212,hsa05212,Pancreatic cancer,Pancreatic cancer,Human Diseases,Cancer: specific types
+map05225,hsa05225,Hepatocellular carcinoma,Hepatocellular carcinoma,Human Diseases,Cancer: specific types
+map05226,hsa05226,Gastric cancer,Gastric cancer,Human Diseases,Cancer: specific types
+map05214,hsa05214,Glioma,Glioma,Human Diseases,Cancer: specific types
+map05216,hsa05216,Thyroid cancer,Thyroid cancer,Human Diseases,Cancer: specific types
+map05221,hsa05221,Acute myeloid leukemia,Acute myeloid leukemia,Human Diseases,Cancer: specific types
+map05220,hsa05220,Chronic myeloid leukemia,Chronic myeloid leukemia,Human Diseases,Cancer: specific types
+map05217,hsa05217,Basal cell carcinoma,Basal cell carcinoma,Human Diseases,Cancer: specific types
+map05218,hsa05218,Melanoma,Melanoma,Human Diseases,Cancer: specific types
+map05211,hsa05211,Renal cell carcinoma,Renal cell carcinoma,Human Diseases,Cancer: specific types
+map05219,hsa05219,Bladder cancer,Bladder cancer,Human Diseases,Cancer: specific types
+map05215,hsa05215,Prostate cancer,Prostate cancer,Human Diseases,Cancer: specific types
+map05213,hsa05213,Endometrial cancer,Endometrial cancer,Human Diseases,Cancer: specific types
+map05224,hsa05224,Breast cancer,Breast cancer,Human Diseases,Cancer: specific types
+map05222,hsa05222,Small cell lung cancer,Small cell lung cancer,Human Diseases,Cancer: specific types
+map05223,hsa05223,Non-small cell lung cancer,Non-small cell lung cancer,Human Diseases,Cancer: specific types
+map05166,hsa05166,Human T-cell leukemia virus 1 infection,Human T-cell leukemia virus 1 infection,Human Diseases,Infectious disease: viral
+map05170,hsa05170,Human immunodeficiency virus 1 infection,Human immunodeficiency virus 1 infection,Human Diseases,Infectious disease: viral
+map05161,hsa05161,Hepatitis B,Hepatitis B,Human Diseases,Infectious disease: viral
+map05160,hsa05160,Hepatitis C,Hepatitis C,Human Diseases,Infectious disease: viral
+map05171,hsa05171,Coronavirus disease - COVID-19,Coronavirus disease - COVID-19,Human Diseases,Infectious disease: viral
+map05164,hsa05164,Influenza A,Influenza A,Human Diseases,Infectious disease: viral
+map05162,hsa05162,Measles,Measles,Human Diseases,Infectious disease: viral
+map05168,hsa05168,Herpes simplex virus 1 infection,Herpes simplex virus 1 infection,Human Diseases,Infectious disease: viral
+map05163,hsa05163,Human cytomegalovirus infection,Human cytomegalovirus infection,Human Diseases,Infectious disease: viral
+map05167,hsa05167,Kaposi sarcoma-associated herpesvirus infection,Kaposi sarcoma-associated herpesvirus infection,Human Diseases,Infectious disease: viral
+map05169,hsa05169,Epstein-Barr virus infection,Epstein-Barr virus infection,Human Diseases,Infectious disease: viral
+map05165,hsa05165,Human papillomavirus infection,Human papillomavirus infection,Human Diseases,Infectious disease: viral
+map05110,hsa05110,Vibrio cholerae infection,Vibrio cholerae infection,Human Diseases,Infectious disease: bacterial
+map05120,hsa05120,Epithelial cell signaling in Helicobacter pylori infection,Epithelial cell signaling in Helicobacter pylori infection,Human Diseases,Infectious disease: bacterial
+map05130,hsa05130,Pathogenic Escherichia coli infection,Pathogenic Escherichia coli infection,Human Diseases,Infectious disease: bacterial
+map05132,hsa05132,Salmonella infection,Salmonella infection,Human Diseases,Infectious disease: bacterial
+map05131,hsa05131,Shigellosis,Shigellosis,Human Diseases,Infectious disease: bacterial
+map05135,hsa05135,Yersinia infection,Yersinia infection,Human Diseases,Infectious disease: bacterial
+map05133,hsa05133,Pertussis,Pertussis,Human Diseases,Infectious disease: bacterial
+map05134,hsa05134,Legionellosis,Legionellosis,Human Diseases,Infectious disease: bacterial
+map05150,hsa05150,Staphylococcus aureus infection,Staphylococcus aureus infection,Human Diseases,Infectious disease: bacterial
+map05152,hsa05152,Tuberculosis,Tuberculosis,Human Diseases,Infectious disease: bacterial
+map05100,hsa05100,Bacterial invasion of epithelial cells,Bacterial invasion of epithelial cells,Human Diseases,Infectious disease: bacterial
+map05146,hsa05146,Amoebiasis,Amoebiasis,Human Diseases,Infectious disease: parasitic
+map05144,hsa05144,Malaria,Malaria,Human Diseases,Infectious disease: parasitic
+map05145,hsa05145,Toxoplasmosis,Toxoplasmosis,Human Diseases,Infectious disease: parasitic
+map05140,hsa05140,Leishmaniasis,Leishmaniasis,Human Diseases,Infectious disease: parasitic
+map05142,hsa05142,Chagas disease,Chagas disease,Human Diseases,Infectious disease: parasitic
+map05143,hsa05143,African trypanosomiasis,African trypanosomiasis,Human Diseases,Infectious disease: parasitic
+map05310,hsa05310,Asthma,Asthma,Human Diseases,Immune disease
+map05322,hsa05322,Systemic lupus erythematosus,Systemic lupus erythematosus,Human Diseases,Immune disease
+map05323,hsa05323,Rheumatoid arthritis,Rheumatoid arthritis,Human Diseases,Immune disease
+map05320,hsa05320,Autoimmune thyroid disease,Autoimmune thyroid disease,Human Diseases,Immune disease
+map05321,hsa05321,Inflammatory bowel disease,Inflammatory bowel disease,Human Diseases,Immune disease
+map05330,hsa05330,Allograft rejection,Allograft rejection,Human Diseases,Immune disease
+map05332,hsa05332,Graft-versus-host disease,Graft-versus-host disease,Human Diseases,Immune disease
+map05340,hsa05340,Primary immunodeficiency,Primary immunodeficiency,Human Diseases,Immune disease
+map05010,hsa05010,Alzheimer disease,Alzheimer disease,Human Diseases,Neurodegenerative disease
+map05012,hsa05012,Parkinson disease,Parkinson disease,Human Diseases,Neurodegenerative disease
+map05014,hsa05014,Amyotrophic lateral sclerosis,Amyotrophic lateral sclerosis,Human Diseases,Neurodegenerative disease
+map05016,hsa05016,Huntington disease,Huntington disease,Human Diseases,Neurodegenerative disease
+map05017,hsa05017,Spinocerebellar ataxia,Spinocerebellar ataxia,Human Diseases,Neurodegenerative disease
+map05020,hsa05020,Prion disease,Prion disease,Human Diseases,Neurodegenerative disease
+map05022,hsa05022,Pathways of neurodegeneration - multiple diseases,Pathways of neurodegeneration - multiple diseases,Human Diseases,Neurodegenerative disease
+map05030,hsa05030,Cocaine addiction,Cocaine addiction,Human Diseases,Substance dependence
+map05031,hsa05031,Amphetamine addiction,Amphetamine addiction,Human Diseases,Substance dependence
+map05032,hsa05032,Morphine addiction,Morphine addiction,Human Diseases,Substance dependence
+map05033,hsa05033,Nicotine addiction,Nicotine addiction,Human Diseases,Substance dependence
+map05034,hsa05034,Alcoholism,Alcoholism,Human Diseases,Substance dependence
+map05417,hsa05417,Lipid and atherosclerosis,Lipid and atherosclerosis,Human Diseases,Cardiovascular disease
+map05418,hsa05418,Fluid shear stress and atherosclerosis,Fluid shear stress and atherosclerosis,Human Diseases,Cardiovascular disease
+map05410,hsa05410,Hypertrophic cardiomyopathy,Hypertrophic cardiomyopathy,Human Diseases,Cardiovascular disease
+map05412,hsa05412,Arrhythmogenic right ventricular cardiomyopathy,Arrhythmogenic right ventricular cardiomyopathy,Human Diseases,Cardiovascular disease
+map05414,hsa05414,Dilated cardiomyopathy,Dilated cardiomyopathy,Human Diseases,Cardiovascular disease
+map05415,hsa05415,Diabetic cardiomyopathy,Diabetic cardiomyopathy,Human Diseases,Cardiovascular disease
+map05416,hsa05416,Viral myocarditis,Viral myocarditis,Human Diseases,Cardiovascular disease
+map04930,hsa04930,Type II diabetes mellitus,Type II diabetes mellitus,Human Diseases,Endocrine and metabolic disease
+map04940,hsa04940,Type I diabetes mellitus,Type I diabetes mellitus,Human Diseases,Endocrine and metabolic disease
+map04950,hsa04950,Maturity onset diabetes of the young,Maturity onset diabetes of the young,Human Diseases,Endocrine and metabolic disease
+map04936,hsa04936,Alcoholic liver disease,Alcoholic liver disease,Human Diseases,Endocrine and metabolic disease
+map04932,hsa04932,Non-alcoholic fatty liver disease,Non-alcoholic fatty liver disease,Human Diseases,Endocrine and metabolic disease
+map04931,hsa04931,Insulin resistance,Insulin resistance,Human Diseases,Endocrine and metabolic disease
+map04933,hsa04933,AGE-RAGE signaling pathway in diabetic complications,AGE-RAGE signaling pathway in diabetic complications,Human Diseases,Endocrine and metabolic disease
+map04934,hsa04934,Cushing syndrome,Cushing syndrome,Human Diseases,Endocrine and metabolic disease
+map01501,hsa01501,beta-Lactam resistance,beta-Lactam resistance,Human Diseases,Drug resistance: antimicrobial
+map01502,hsa01502,Vancomycin resistance,Vancomycin resistance,Human Diseases,Drug resistance: antimicrobial
+map01503,hsa01503,Cationic antimicrobial peptide (CAMP) resistance,Cationic antimicrobial peptide (CAMP) resistance,Human Diseases,Drug resistance: antimicrobial
+map01521,hsa01521,EGFR tyrosine kinase inhibitor resistance,EGFR tyrosine kinase inhibitor resistance,Human Diseases,Drug resistance: antineoplastic
+map01524,hsa01524,Platinum drug resistance,Platinum drug resistance,Human Diseases,Drug resistance: antineoplastic
+map01523,hsa01523,Antifolate resistance,Antifolate resistance,Human Diseases,Drug resistance: antineoplastic
+map01522,hsa01522,Endocrine resistance,Endocrine resistance,Human Diseases,Drug resistance: antineoplastic
+map07011,hsa07011,Penicillins,Penicillins,Drug Development,Chronology: Antiinfectives
+map07012,hsa07012,Cephalosporins - parenteral agents,Cephalosporins - parenteral agents,Drug Development,Chronology: Antiinfectives
+map07013,hsa07013,Cephalosporins - oral agents,Cephalosporins - oral agents,Drug Development,Chronology: Antiinfectives
+map07021,hsa07021,Aminoglycosides,Aminoglycosides,Drug Development,Chronology: Antiinfectives
+map07019,hsa07019,Tetracyclines,Tetracyclines,Drug Development,Chronology: Antiinfectives
+map07020,hsa07020,Macrolides and ketolides,Macrolides and ketolides,Drug Development,Chronology: Antiinfectives
+map07014,hsa07014,Quinolones,Quinolones,Drug Development,Chronology: Antiinfectives
+map07023,hsa07023,Rifamycins,Rifamycins,Drug Development,Chronology: Antiinfectives
+map07026,hsa07026,Antifungal agents,Antifungal agents,Drug Development,Chronology: Antiinfectives
+map07044,hsa07044,Antiviral agents,Antiviral agents,Drug Development,Chronology: Antiinfectives
+map07053,hsa07053,Anti-HIV agents,Anti-HIV agents,Drug Development,Chronology: Antiinfectives
+map07040,hsa07040,Antineoplastics - alkylating agents,Antineoplastics - alkylating agents,Drug Development,Chronology: Antineoplastics
+map07041,hsa07041,Antineoplastics - antimetabolic agents,Antineoplastics - antimetabolic agents,Drug Development,Chronology: Antineoplastics
+map07042,hsa07042,Antineoplastics - agents from natural products,Antineoplastics - agents from natural products,Drug Development,Chronology: Antineoplastics
+map07043,hsa07043,Antineoplastics - hormones,Antineoplastics - hormones,Drug Development,Chronology: Antineoplastics
+map07045,hsa07045,Antineoplastics - protein kinase inhibitors,Antineoplastics - protein kinase inhibitors,Drug Development,Chronology: Antineoplastics
+map07032,hsa07032,Hypnotics,Hypnotics,Drug Development,Chronology: Nervous system agents
+map07030,hsa07030,Anxiolytics,Anxiolytics,Drug Development,Chronology: Nervous system agents
+map07033,hsa07033,Anticonvulsants,Anticonvulsants,Drug Development,Chronology: Nervous system agents
+map07015,hsa07015,Local analgesics,Local analgesics,Drug Development,Chronology: Nervous system agents
+map07039,hsa07039,Opioid analgesics,Opioid analgesics,Drug Development,Chronology: Nervous system agents
+map07028,hsa07028,Antipsychotics,Antipsychotics,Drug Development,Chronology: Nervous system agents
+map07029,hsa07029,Antipsychotics - phenothiazines,Antipsychotics - phenothiazines,Drug Development,Chronology: Nervous system agents
+map07031,hsa07031,Antipsychotics - butyrophenones,Antipsychotics - butyrophenones,Drug Development,Chronology: Nervous system agents
+map07027,hsa07027,Antidepressants,Antidepressants,Drug Development,Chronology: Nervous system agents
+map07056,hsa07056,Agents for Alzheimer-type dementia,Agents for Alzheimer-type dementia,Drug Development,Chronology: Nervous system agents
+map07057,hsa07057,Antiparkinsonian agents,Antiparkinsonian agents,Drug Development,Chronology: Nervous system agents
+map07055,hsa07055,Sulfonamide derivatives - overview,Sulfonamide derivatives - overview,Drug Development,Chronology: Other drugs
+map07016,hsa07016,Sulfonamide derivatives - sulfa drugs,Sulfonamide derivatives - sulfa drugs,Drug Development,Chronology: Other drugs
+map07017,hsa07017,Sulfonamide derivatives - diuretics,Sulfonamide derivatives - diuretics,Drug Development,Chronology: Other drugs
+map07018,hsa07018,Sulfonamide derivatives - hypoglycemic agents,Sulfonamide derivatives - hypoglycemic agents,Drug Development,Chronology: Other drugs
+map07037,hsa07037,Antiarrhythmic drugs,Antiarrhythmic drugs,Drug Development,Chronology: Other drugs
+map07038,hsa07038,Antiulcer drugs,Antiulcer drugs,Drug Development,Chronology: Other drugs
+map07046,hsa07046,Immunosuppressive agents,Immunosuppressive agents,Drug Development,Chronology: Other drugs
+map07047,hsa07047,Osteoporosis drugs,Osteoporosis drugs,Drug Development,Chronology: Other drugs
+map07048,hsa07048,Antimigraines,Antimigraines,Drug Development,Chronology: Other drugs
+map07049,hsa07049,Antithrombosis agents,Antithrombosis agents,Drug Development,Chronology: Other drugs
+map07050,hsa07050,Antirheumatics - DMARDs and biological agents,Antirheumatics - DMARDs and biological agents,Drug Development,Chronology: Other drugs
+map07051,hsa07051,Antidiabetics,Antidiabetics,Drug Development,Chronology: Other drugs
+map07052,hsa07052,Antidyslipidemic agents,Antidyslipidemic agents,Drug Development,Chronology: Other drugs
+map07054,hsa07054,Antiglaucoma agents,Antiglaucoma agents,Drug Development,Chronology: Other drugs
+map07220,hsa07220,Cholinergic and anticholinergic drugs,Cholinergic and anticholinergic drugs,Drug Development,Target-based classification: G protein-coupled receptors
+map07215,hsa07215,alpha-Adrenergic receptor agonists/antagonists,alpha-Adrenergic receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07214,hsa07214,beta-Adrenergic receptor agonists/antagonists,beta-Adrenergic receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07213,hsa07213,Dopamine receptor agonists/antagonists,Dopamine receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07212,hsa07212,Histamine H1 receptor antagonists,Histamine H1 receptor antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07227,hsa07227,Histamine H2/H3 receptor agonists/antagonists,Histamine H2/H3 receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07211,hsa07211,Serotonin receptor agonists/antagonists,Serotonin receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07228,hsa07228,Eicosanoid receptor agonists/antagonists,Eicosanoid receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07224,hsa07224,Opioid receptor agonists/antagonists,Opioid receptor agonists/antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07229,hsa07229,Angiotensin receptor and endothelin receptor antagonists,Angiotensin receptor and endothelin receptor antagonists,Drug Development,Target-based classification: G protein-coupled receptors
+map07225,hsa07225,Glucocorticoid and mineralocorticoid receptor agonists/antagonists,Glucocorticoid and mineralocorticoid receptor agonists/antagonists,Drug Development,Target-based classification: Nuclear receptors
+map07226,hsa07226,"Progesterone, androgen and estrogen receptor agonists/antagonists","Progesterone, androgen and estrogen receptor agonists/antagonists",Drug Development,Target-based classification: Nuclear receptors
+map07223,hsa07223,Retinoic acid receptor (RAR) and retinoid X receptor (RXR) agonists/antagonists,Retinoic acid receptor (RAR) and retinoid X receptor (RXR) agonists/antagonists,Drug Development,Target-based classification: Nuclear receptors
+map07222,hsa07222,Peroxisome proliferator-activated receptor (PPAR) agonists,Peroxisome proliferator-activated receptor (PPAR) agonists,Drug Development,Target-based classification: Nuclear receptors
+map07221,hsa07221,Nicotinic cholinergic receptor antagonists,Nicotinic cholinergic receptor antagonists,Drug Development,Target-based classification: Ion channels
+map07230,hsa07230,GABA-A receptor agonists/antagonists,GABA-A receptor agonists/antagonists,Drug Development,Target-based classification: Ion channels
+map07036,hsa07036,Calcium channel blocking drugs,Calcium channel blocking drugs,Drug Development,Target-based classification: Ion channels
+map07231,hsa07231,Sodium channel blocking drugs,Sodium channel blocking drugs,Drug Development,Target-based classification: Ion channels
+map07232,hsa07232,Potassium channel blocking and opening drugs,Potassium channel blocking and opening drugs,Drug Development,Target-based classification: Ion channels
+map07235,hsa07235,N-Methyl-D-aspartic acid (NMDA) receptor antagonists,N-Methyl-D-aspartic acid (NMDA) receptor antagonists,Drug Development,Target-based classification: Ion channels
+map07233,hsa07233,Ion transporter inhibitors,Ion transporter inhibitors,Drug Development,Target-based classification: Transporters
+map07234,hsa07234,Neurotransmitter transporter inhibitors,Neurotransmitter transporter inhibitors,Drug Development,Target-based classification: Transporters
+map07216,hsa07216,Catecholamine transferase inhibitors,Catecholamine transferase inhibitors,Drug Development,Target-based classification: Enzymes
+map07219,hsa07219,Cyclooxygenase inhibitors,Cyclooxygenase inhibitors,Drug Development,Target-based classification: Enzymes
+map07024,hsa07024,HMG-CoA reductase inhibitors,HMG-CoA reductase inhibitors,Drug Development,Target-based classification: Enzymes
+map07217,hsa07217,Renin-angiotensin system inhibitors,Renin-angiotensin system inhibitors,Drug Development,Target-based classification: Enzymes
+map07218,hsa07218,HIV protease inhibitors,HIV protease inhibitors,Drug Development,Target-based classification: Enzymes
+map07025,hsa07025,Quinolines,Quinolines,Drug Development,Structure-based classification
+map07034,hsa07034,Eicosanoids,Eicosanoids,Drug Development,Structure-based classification
+map07035,hsa07035,Prostaglandins,Prostaglandins,Drug Development,Structure-based classification
+map07110,hsa07110,Benzoic acid family,Benzoic acid family,Drug Development,Skeleton-based classification
+map07112,hsa07112,"1,2-Diphenyl substitution family","1,2-Diphenyl substitution family",Drug Development,Skeleton-based classification
+map07114,hsa07114,Naphthalene family,Naphthalene family,Drug Development,Skeleton-based classification
+map07117,hsa07117,Benzodiazepine family,Benzodiazepine family,Drug Development,Skeleton-based classification
