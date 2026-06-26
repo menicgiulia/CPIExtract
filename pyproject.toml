@@ -13,6 +13,7 @@ license = { text = "MIT" }
 authors = [
     { name = "Michael Sebek" },
     { name = "Andrea Piras" },
+    { name = "Lucía Prieto Santamaría"}
     { name = "Shi Chenghao" },
     { name = "Gordana Ispirova" },
     { name = "Giulia Menichetti", email = "giulia.menichetti@channing.harvard.edu" }
@@ -30,9 +31,9 @@ dependencies = [
     "mysql-connector-python>=8.0",
     "biomart>=0.9.2",
     "chembl_webresource_client>=0.10.8",
-    "pubchempy>=1.0.4",
+    "pubchempy>=1.0.5",
     "tqdm>=4.65.0",
-    "mygene>=3.2.2"
+    "mygene>=3.2.2",
 ]
 
 [project.optional-dependencies]
