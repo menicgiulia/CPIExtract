@@ -1,0 +1,7 @@
+compound_group,threshold,CPIExtract only,DrugBank only,Significant in both
+Natural compounds,all,124,22,55
+Natural compounds,pchembl_ge_3,66,0,0
+Natural compounds,pchembl_ge_6,9,0,0
+Drug compounds,all,7150,983,3928
+Drug compounds,pchembl_ge_3,4328,113,885
+Drug compounds,pchembl_ge_6,1514,37,548
