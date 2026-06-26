@@ -1,0 +1,20 @@
+{
+  "base_dir": "/Users/lucia/Library/CloudStorage/OneDrive-UniversidadPolite\u0301cnicadeMadrid/BarabasiLab/CPIExtract new version/for paper/cipextract_drugbank_kegg_enrichment_clean",
+  "cipextract_file": "/Users/lucia/Library/CloudStorage/OneDrive-UniversidadPolite\u0301cnicadeMadrid/BarabasiLab/CPIExtract new version/for paper/cipextract_drugbank_kegg_enrichment_clean/data/CPIE_FB_final_v2.csv",
+  "drugbank_zip_file": "/Users/lucia/Library/CloudStorage/OneDrive-UniversidadPolite\u0301cnicadeMadrid/BarabasiLab/CPIExtract new version/for paper/cipextract_drugbank_kegg_enrichment_clean/data/drugbank_all_full_database.xml.zip",
+  "drugbank_cache_file": "/Users/lucia/Library/CloudStorage/OneDrive-UniversidadPolite\u0301cnicadeMadrid/BarabasiLab/CPIExtract new version/for paper/cipextract_drugbank_kegg_enrichment_clean/cache/drugbank_compounds_targets_atc_inchikey_v2.csv",
+  "enrichment_library": "KEGG_2021_Human",
+  "minimum_targets_for_enrichment": 5,
+  "significance_threshold": 0.05,
+  "run_enrichment": false,
+  "thresholds": {
+    "all": null,
+    "pchembl_ge_3": 3,
+    "pchembl_ge_6": 6
+  },
+  "n_cpie_rows": 206711,
+  "n_drugbank_rows": 73687,
+  "n_enrichment_rows": 59071,
+  "n_delta_rows": 46175,
+  "n_significant_pairs": 19762
+}
