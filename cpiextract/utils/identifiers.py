@@ -111,7 +111,7 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
     -------
     DataFrame
         Dataframe of the compound(s) containing the following values: \\
-        cid, synonyms, inchi, inchikey, isomeric_smiles, canonical_smiles, iupac_name, molecular_formula, molecular_weight
+        cid, synonyms, inchi, inchikey, smiles, connectivity_smiles, iupac_name, molecular_formula, molecular_weight
     """
 
     if isinstance(input_id, dict):
@@ -139,28 +139,37 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
             # API PubChem Limit. conservative at 0.5 while 0.25 is the hard minimum 
             time.sleep(0.4)
 
-            # Select info to keep from pubchem API into series
-            data = c.to_series(properties=['isomeric_smiles','canonical_smiles','inchi','inchikey','synonyms','iupac_name','molecular_formula','molecular_weight']) 
-        
+            # Replace c.to_series() with PubChemServer to unify property keys
+            pcs = PubChemServer()
+            cid_str = str(c.cid)
+            api_columns = pcs.get_columns(list(pcs.properties.values()))
+            data = pcs.get_compounds(cid_str, api_columns, namespace='cid')
+            data = data.rename(columns=pcs.properties)
+
+            # Fetch synonyms
+            synonyms_df = pcs.get_synonyms(cid_str)
+            synonyms = synonyms_df['Synonym'].iloc[0].split(',') if len(synonyms_df) > 0 else []
             # Add IUPAC identifiers into the synonyms list for search in other databases (e.g. ChEMBL)
-            data['synonyms'].append(data['inchi'])
-            data['synonyms'].append(data['inchikey'])
-            data['synonyms'].append(data['isomeric_smiles'])
-            data['synonyms'].append(data['canonical_smiles'])
-            data['synonyms'].append(data['iupac_name'])
-            if isinstance(input_id, int):
-                data['cid'] = input_id
-            else:
-                data['cid'] = cids[0]
-            
+            synonyms.extend([
+                data['inchi'].iloc[0],
+                data['inchikey'].iloc[0],
+                data['smiles'].iloc[0],
+                data['connectivity_smiles'].iloc[0],
+                data['iupac_name'].iloc[0],
+                ])
+            data['synonyms'] = [synonyms]
+            data['cid'] = c.cid
+            data['input_id']=input_id
+
             # Convert dictionary to Dataframe
-            input_compound = data.to_frame().transpose()
+            input_compound = data
+            cols = ['input_id'] + [c for c in input_compound.columns if c != 'input_id']
+            input_compound = input_compound[cols]
 
         # Error if input is not the proper format or not found in PubChem
         except: 
             raise TypeError("Input needs to be CID, InChI, InChIKey, or SMILES. If error persists, then likely input identifier does not exist on PubChem.")
     
-    pcs = PubChemServer()
     if 'inchikey' in input_compound.columns:
         # Handle single row case
         if len(input_compound) == 1:
