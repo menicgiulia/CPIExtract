@@ -92,6 +92,8 @@ class PubChemServer(metaclass=Singleton):
                 # searchtype=None
             ).read()
         except pcp.PubChemHTTPError as e:
+            if '404' in str(e) or 'NotFound' in str(e):
+                return pd.DataFrame({'CID': pd.Series(dtype='int64'), 'Synonym': pd.Series(dtype='object')})
             raise e
         
         result = json.loads(result.decode())
