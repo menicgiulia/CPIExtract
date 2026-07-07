@@ -143,7 +143,7 @@ class PubChem(Database):
             # Try local database first
             if self.use_local:
                 cid_list = self._get_cids_from_firstblock(firstblock)
-                if cid_list is None:  # Database error, use API
+                if not cid_list:  # Database empty, use API
                     try:
                         cid_list = pcp.get_cids(firstblock, namespace='inchikey', searchtype=None)
                         if not cid_list:
@@ -548,11 +548,14 @@ class PubChem(Database):
     def _retrieve_from_local(self, cid_list, pChEMBL_thres):
         """Retrieve bioactivities from database with SQL JOIN for human genes"""
 
+        if not cid_list: # do not check duckdb if cid_list is empty
+            return pd.DataFrame()
+
         con=None
         try:
             con = duckdb.connect(self.db_file, read_only=True)
             con.execute("SET enable_progress_bar=false")
-    
+
             cid_str = ','.join(map(str, cid_list))
     
             # JOIN with gene_info to filter for human genes in SQL
