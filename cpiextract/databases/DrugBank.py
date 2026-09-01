@@ -89,7 +89,7 @@ class DB(Database):
                 # Extract all synonyms into a single list
                 all_synonyms = list(input_comp['synonyms'].explode().dropna().str.lower().unique())
                 # Filter DB_data based on all unique synonyms
-                DB_raw = self.data_manager.retrieve_raw_data('name', all_synonyms)
+                DB_raw = self.data_manager.retrieve_raw_data('name', all_synonyms, case_insensitive=True)
 
             # Check if at least one match has been found
             if len(DB_raw) > 0: 
