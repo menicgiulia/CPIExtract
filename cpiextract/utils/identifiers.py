@@ -148,7 +148,8 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
 
             # Fetch synonyms
             synonyms_df = pcs.get_synonyms(cid_str)
-            synonyms = synonyms_df['Synonym'].iloc[0].split(',') if len(synonyms_df) > 0 else []
+            synonyms = synonyms_df['Synonym'].iloc[0] if len(synonyms_df) > 0 else []
+            #print(synonyms)
             # Add IUPAC identifiers into the synonyms list for search in other databases (e.g. ChEMBL)
             synonyms.extend([
                 data['inchi'].iloc[0],
