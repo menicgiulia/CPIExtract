@@ -66,22 +66,6 @@ class PubChemServer(metaclass=Singleton):
         return compounds
     
     def get_synonyms(self, comp: Strs, domain: str='compound', namespace: str='cid') -> pd.DataFrame:
-        '''Return synonyms of specified compound(s).
-        
-        Parameters
-        ----------
-        comp: list[str] | str
-            A (set of) compound id(s).
-        domain: str
-            Search structures in `compound` domain by default.
-        namespace: str
-            ID namespace of `comp`.
-
-        Returns
-        -------
-        DataFrame
-            A table contains synonyms of specified compound(s).
-        '''
         try:
             result = pcp.request(
                 identifier=comp,
@@ -89,20 +73,14 @@ class PubChemServer(metaclass=Singleton):
                 namespace=namespace,
                 operation='synonyms',
                 output='JSON',
-                # searchtype=None
             ).read()
         except pcp.PubChemHTTPError as e:
-            if '404' in str(e) or 'NotFound' in str(e):
-                return pd.DataFrame({'CID': pd.Series(dtype='int64'), 'Synonym': pd.Series(dtype='object')})
             raise e
-        
+    
         result = json.loads(result.decode())
-
         result = result['InformationList']['Information']
-
         compounds = pd.DataFrame.from_dict(result)
-        compounds['Synonym'] = compounds['Synonym'].apply(lambda x: ','.join(x) if isinstance(x, list) else x)
-
+        # removed: the ','.join(x) line — keep Synonym as a native list
         return compounds
 
     def get_inchikey_first_block(self, inchikey):
