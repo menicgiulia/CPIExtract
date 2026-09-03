@@ -58,11 +58,11 @@ class BindingDB(Database):
         bdb_filt['Temp (C)'] = bdb_filt['Temp (C)'].str.replace(r'[^0-9\.]','',regex=True)
         # Convert strings to numeric values 
         bdb_filt['Temp (C)'] = bdb_filt['Temp (C)'].apply(pd.to_numeric, errors='coerce') 
-        # Filter temperature (also accept null values)
-        bdb_filt = bdb_filt.loc[(bdb_filt['Temp (C)'].isnull()) | (bdb_filt['Temp (C)'] < 40) &
-                            # Filter pH (also accept null values)
-                            ((bdb_filt['pH'].isnull()) | (bdb_filt['pH'] < 9) & (bdb_filt['pH'] > 5))]\
-                                .drop_duplicates(ignore_index=True)
+        # Filter temperature and pH (accept null values as normal conditions)
+        bdb_filt = bdb_filt.loc[((bdb_filt['Temp (C)'].isnull()) | (bdb_filt['Temp (C)'] < 40)) &
+                    ((bdb_filt['pH'].isnull()) | ((bdb_filt['pH'] < 9) & (bdb_filt['pH'] > 5)))]
+                    .drop_duplicates(ignore_index=True)
+        
         return bdb_filt
 
     def _compute_pchembl(self, bdb_dat: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
