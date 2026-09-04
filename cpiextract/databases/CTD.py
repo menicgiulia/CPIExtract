@@ -33,12 +33,12 @@ class CTD(Database):
             self.data_manager = SQLManager(connection, 'CTD')
 
     def _filter_database(self, CTD_raw: pd.DataFrame) -> pd.DataFrame:
-                        # Filter to Homo Sapiens only
+        # Filter to Homo Sapiens only
         CTD_act = CTD_raw.loc[(CTD_raw['OrganismID'] == 9606) &
-                            # Only select ligand-protein binding
-                            (CTD_raw['InteractionActions'].str.contains(r'affects\^binding')) &
-                            # Only protein interactions are collected
-                            (CTD_raw['GeneForms']==('protein'))].drop_duplicates().reset_index(drop=True)
+                    # Only select ligand-protein binding
+                    CTD_raw['InteractionActions'].str.contains(r'(affects|increases|decreases)\^binding') &
+                    # Only protein interactions are collected
+                    (CTD_raw['GeneForms']==('protein'))].drop_duplicates().reset_index(drop=True)
         return CTD_act
 
     def interactions(self, input_comp: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
