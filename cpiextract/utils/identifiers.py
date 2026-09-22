@@ -8,33 +8,7 @@ import re
 from ..servers.BiomartServer import BiomartServer
 from ..servers.MyGeneServer import MyGeneServer
 from ..servers.PubChemServer import PubChemServer
-
-
-def _pubchem_call_with_retry(func, *args, max_retries: int = 3, backoff_base: float = 1.0,
-                              verbose: bool = False, **kwargs):
-    """
-    Calls a PubChem-hitting function (pubchempy under the hood) with retry-with-backoff.
-    PubChem's PUG-REST service is known to intermittently return errors/timeouts under
-    load - without this, a single transient failure surfaces identically to "this
-    compound doesn't exist" (both currently fall through to the same broad except:
-    below), which is misleading and wastes the person's time chasing a bad input that
-    was never actually the problem. Retries max_retries times total, waiting
-    backoff_base * 2^attempt seconds between attempts (1s, 2s, 4s by default) before
-    giving up and letting the final exception propagate to the caller's own handling.
-    """
-    last_exception = None
-    for attempt in range(max_retries):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            last_exception = e
-            if attempt < max_retries - 1:
-                wait = backoff_base * (2 ** attempt)
-                if verbose:
-                    print(f"  PubChem call failed (attempt {attempt + 1}/{max_retries}): "
-                          f"{e} - retrying in {wait:.1f}s...")
-                time.sleep(wait)
-    raise last_exception
+from .helper import call_with_retry as _pubchem_call_with_retry
 
 
 # Uniprot format checks:
@@ -230,7 +204,7 @@ def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bo
             synonyms_df = _pubchem_call_with_retry(pcs.get_synonyms, cid_str,
                                                     max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
             synonyms = synonyms_df['Synonym'].iloc[0] if len(synonyms_df) > 0 else []
-            #print(synonyms)
+
             # Add IUPAC identifiers into the synonyms list for search in other databases (e.g. ChEMBL)
             synonyms.extend([
                 data['inchi'].iloc[0],
