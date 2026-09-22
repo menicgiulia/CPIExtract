@@ -1,6 +1,6 @@
 # CPIExtract (Compound-Protein Interaction Extract)
 ## A software package to collect and harmonize small molecule and protein interactions
-#### Authors: Michael Sebek, Andrea Piras, Shi Chenghao, Gordana Ispirova, Giulia Menichetti (giulia.menichetti@channing.harvard.edu)
+#### Authors: Michael Sebek, Andrea Piras, Lucía Prieto Santamaría, Shi Chenghao, Gordana Ispirova, Giulia Menichetti (giulia.menichetti@channing.harvard.edu)
 
 ## Introduction
 
