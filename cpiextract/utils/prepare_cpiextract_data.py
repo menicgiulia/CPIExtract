@@ -215,15 +215,24 @@ def build_pubchem_reference_tables(data_path: str, force_download: bool = False)
 
         src_list = ['BindingDB', 'ChEMBL', 'Comparative Toxicogenomics Database (CTD)',
                     'DrugBank', 'DrugCentral']
+        src_set = set(src_list)
+        # Filtering to the 5 relevant sources WHILE reading, rather than building a
+        # DataFrame from every one of SID-Map.gz's hundreds of millions of rows (across
+        # thousands of PubChem depositor sources we don't use at all) and filtering
+        # afterward - that "materialize everything, then filter" approach was the
+        # actual bottleneck here (see conversation): a giant, entirely invisible,
+        # unmeasured pd.DataFrame() construction over nearly the whole file, when only
+        # a small fraction of rows were ever going to survive anyway.
         data_4col = []
         for line in _iter_gzip_lines_with_progress(sid_map_gz, "Parsing SID-Map.gz"):
             parts = line.strip().split('\t')
-            if len(parts) == 4:
+            if len(parts) == 4 and parts[1] in src_set:
                 data_4col.append(parts)
+        print(f"  Matched {len(data_4col):,} rows across the 5 relevant sources - building DataFrame...")
         pc_sid = pd.DataFrame(data_4col, columns=['SID', 'Source', 'External_ID', 'CID'])
         pc_sid['SID'] = pc_sid['SID'].astype(int)
         pc_sid['CID'] = pc_sid['CID'].astype(int)
-        pc_sid = pc_sid[pc_sid['Source'].isin(src_list)]
+        print(f"  Writing {os.path.basename(sid_csv)}...")
         pc_sid.to_csv(sid_csv)
         print(f"  Built {os.path.basename(sid_csv)}: {len(pc_sid):,} rows")
 
@@ -241,8 +250,17 @@ def build_pubchem_reference_tables(data_path: str, force_download: bool = False)
         for line in _iter_gzip_lines_with_progress(cid_inchikey_gz, "Parsing CID-InChI-Key.gz"):
             parts = line.strip().split('\t')
             data_2col.append([parts[0], parts[2]])
+        # Unlike pc_sid above, every row here is potentially needed (any of the 9
+        # databases' compounds could reference any PubChem CID), so there's no
+        # equivalent filter-while-reading speedup available - this DataFrame
+        # construction and the write below are both genuinely large, unavoidable
+        # steps at PubChem's full CID scale. Printed explicitly so it's clear
+        # something is happening rather than silent, even though it can't be sped up
+        # the way pc_sid's construction was.
+        print(f"  Parsed {len(data_2col):,} CID-InChIKey pairs - building DataFrame...")
         pc_cid = pd.DataFrame(data_2col, columns=['CID', 'InChIKey'])
         pc_cid['CID'] = pc_cid['CID'].astype(int)
+        print(f"  Writing {os.path.basename(cid_csv)}...")
         pc_cid.to_csv(cid_csv)
         print(f"  Built {os.path.basename(cid_csv)}: {len(pc_cid):,} rows")
 
