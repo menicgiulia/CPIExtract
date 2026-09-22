@@ -8,7 +8,7 @@ from .databases import BindingDB, ChEMBL, CTD, Database, DrugBank, DrugCentral, 
 from .servers import BiomartServer,ChEMBLServer,PubChemServer,MyGeneServer
 from .data_manager import APIManager, DataManager, LocalManager, SQLManager
 from .sql_connection import sql_connection
-from .utils import helper, identifiers
+from .utils import helper, identifiers,load_cpiextract_data,prepare_cpiextract_data
 
 
 __all__ = [
@@ -17,5 +17,5 @@ __all__ = [
     'BiomartServer', 'MyGeneServer', 'ChEMBLServer', 'PubChemServer',
     'APIManager', 'DataManager', 'LocalManager', 'SQLManager',
     'sql_connection',
-    'helper', 'identifiers'
+    'helper', 'identifiers','load_cpiextract_data','prepare_cpiextract_data'
 ]
