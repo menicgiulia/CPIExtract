@@ -13,7 +13,7 @@ license = { text = "MIT" }
 authors = [
     { name = "Michael Sebek" },
     { name = "Andrea Piras" },
-    { name = "Lucía Prieto Santamaría"}
+    { name = "Lucía Prieto Santamaría"},
     { name = "Shi Chenghao" },
     { name = "Gordana Ispirova" },
     { name = "Giulia Menichetti", email = "giulia.menichetti@channing.harvard.edu" }
@@ -34,11 +34,12 @@ dependencies = [
     "pubchempy>=1.0.5",
     "tqdm>=4.65.0",
     "mygene>=3.2.2",
+    "duckdb>=0.9.0",
+    "pyarrow>=21.0.0"
 ]
 
 [project.optional-dependencies]
 interactive = ["jupyter"]
-performance = ["duckdb>=0.9.0"]
 
 [project.urls]
 Homepage = "https://github.com/menicgiulia/CPIExtract"
