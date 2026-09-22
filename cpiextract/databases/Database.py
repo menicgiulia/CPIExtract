@@ -1,7 +1,6 @@
 '''Template of a Database class.Loading,searching,filtering and preprocessing data from a specified database.'''
 
 from abc import ABC, abstractmethod
-from ..servers.ChEMBLServer import ChEMBLServer as chembl
 from ..servers.PubChemServer import PubChemServer
 from ..utils.helper import *
 import pandas as pd
@@ -94,6 +93,9 @@ class Database(ABC):
 
     def _pubchem_search_chembl(self, db_act: pd.DataFrame, id_name: str, columns: list[str], pc: PubChemServer) -> pd.DataFrame:
         '''Retrieve compounds using compound id (chembl ids).'''
+
+        from ..servers.ChEMBLServer import ChEMBLServer as chembl
+
         pubchem_chembl = []
         existing_id = []
         inchis = []
@@ -147,5 +149,3 @@ class Database(ABC):
             db_comps = pd.concat([db_comps, db_inchi])
 
         return db_comps
-
-
