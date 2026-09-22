@@ -95,7 +95,7 @@ def protein_identifiers(input_id: int | str, gene_server=None, server_select='my
     return input_protein
 
 
-def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataFrame:
+def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bool = False) -> pd.DataFrame:
     """
     Retrieves compound identifiers and synonyms from PubChem.
 
@@ -106,6 +106,11 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
     input_id : int/dictionary/string
         Identifier of the compound(s) to search on the API. It can be one of the following types: \\
         CID (int), InChI, inchikey or smiles
+    verbose : bool, default False
+        If True, prints a message when the input resolves to a salt (or other
+        multi-covalent-component structure) and gets replaced with its PubChem parent
+        compound. Failures in the parent lookup itself are always printed regardless of this
+        flag, since they indicate something going wrong rather than a routine diagnostic.
 
     Returns
     -------
@@ -118,23 +123,41 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
         input_compound = pd.DataFrame.from_dict(input_id)
     else:
         try:
+            # Tracks the input and which resolved value to compare it against
+            original_identifier = None
+            identifier_type = None
+
             if isinstance(input_id, int):
-                # Retrieve info from PubChem using CID input
-                c = pcp.Compound.from_cid(input_id) 
+                cids = pcp.get_cids(input_id, namespace='cid', domain='compound',
+                                     cids_type='parent', as_dataframe=False)
+                c = pcp.Compound.from_cid(cids[0])
+                original_identifier, identifier_type = input_id, 'cid'
             
             else:
                 # Find input is an inchi
                 if input_id.find('InChI=') == 0: 
-                    cids = pcp.get_cids(input_id, namespace='inchi', searchtype=None, as_dataframe=False)
+                    cids = pcp.get_cids(input_id, namespace='inchi', searchtype=None, domain='compound',
+                                         cids_type='parent', as_dataframe=False)
                     c = pcp.Compound.from_cid(cids[0])
+                    original_identifier, identifier_type = input_id, 'inchi'
                 # Find input is a inchikey
                 elif len(input_id) == 27 and input_id.find('-') == 14: 
-                    cids = pcp.get_cids(input_id, namespace='inchikey', searchtype=None, as_dataframe=False) 
+                    cids = pcp.get_cids(input_id, namespace='inchikey', searchtype=None, domain='compound',
+                                         cids_type='parent', as_dataframe=False) 
                     c = pcp.Compound.from_cid(cids[0])
+                    original_identifier, identifier_type = input_id, 'inchikey'
                 # If not any of the above, assume input is smiles
                 else: 
-                    cids = pcp.get_cids(input_id, namespace='smiles', searchtype=None, as_dataframe=False) 
+                    cids = pcp.get_cids(input_id, namespace='smiles', searchtype=None, domain='compound',
+                                         cids_type='parent', as_dataframe=False) 
                     c = pcp.Compound.from_cid(cids[0])
+                    original_identifier, identifier_type = input_id, 'smiles'
+
+            # CID case: comparing directly against c.cid
+            if identifier_type == 'cid' and c.cid != original_identifier and verbose:
+                print(f"Desalting triggered: input CID {original_identifier} resolved to a "
+                      f"different compound (CID {c.cid}) - likely a salt or other "
+                      f"multi-component structure.")
 
             # API PubChem Limit. conservative at 0.5 while 0.25 is the hard minimum 
             time.sleep(0.4)
@@ -145,6 +168,16 @@ def compound_identifiers(input_id: int | str | dict[str, str | int]) -> pd.DataF
             api_columns = pcs.get_columns(list(pcs.properties.values()))
             data = pcs.get_compounds(cid_str, api_columns, namespace='cid')
             data = data.rename(columns=pcs.properties)
+
+            # InChI/InChIKey/SMILES case: comparing the input identifier against record
+            if (identifier_type is not None and identifier_type != 'cid'
+                    and identifier_type in data.columns):
+                resolved_identifier = data[identifier_type].iloc[0]
+                if resolved_identifier != original_identifier and verbose:
+                    print(f"Desalting triggered: input {identifier_type} "
+                          f"'{original_identifier}' resolved to a different compound "
+                          f"(CID {c.cid}, {identifier_type}='{resolved_identifier}') "
+                          f"- likely a salt or other multi-component structure.")
 
             # Fetch synonyms
             synonyms_df = pcs.get_synonyms(cid_str)
