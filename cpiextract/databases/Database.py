@@ -27,6 +27,36 @@ class Database(ABC):
         Retrieves compounds from the database interacting with proteins passed as input.
         """
         raise NotImplementedError
+
+    def _call_with_retry(self, func, *args, max_retries: int = 3, backoff_base: float = 1.0, **kwargs):
+        """
+        Calls func with retry-with-backoff. Originally written for PubChem's PUG-REST
+        service specifically (confirmed - see conversation, a real ServerBusyError),
+        but the retry mechanism itself has nothing PubChem-specific about it, so this
+        also covers _pubchem_search_chembl's ChEMBL API call below - without this, a
+        single transient failure inside a per-row/per-batch loop here is
+        indistinguishable from "genuinely not found", silently leaving that row's
+        compound info unresolved (e.g. a missing inchikey) with no indication anything
+        went wrong, rather than surfacing as a retryable, temporary issue. Retries
+        max_retries times total, waiting backoff_base * 2^attempt seconds between
+        attempts (1s, 2s, 4s by default) before letting the final exception propagate
+        to the caller's own handling.
+
+        Duplicated from utils/identifiers.py's own retry helper rather than imported,
+        since this file doesn't have visibility into utils/helper.py's current
+        contents to safely add a shared version there instead - worth consolidating
+        later once that file's contents are available.
+        """
+        last_exception = None
+        for attempt in range(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+                if attempt < max_retries - 1:
+                    wait = backoff_base * (2 ** attempt)
+                    time.sleep(wait)
+        raise last_exception
     
     def _pubchem_search_cid(self, db_act: pd.DataFrame, columns: list[str], pc: PubChemServer) -> pd.DataFrame:
         '''Search componds from pubchem according to CID.'''
@@ -43,11 +73,11 @@ class Database(ABC):
             if len(cids) > 1000:
                 for start, end in generate_subsets(len(cids), 1000):
                     subset = cids[start:end]
-                    comps = pc.get_compounds(subset, selected_columns, namespace='cid')
+                    comps = self._call_with_retry(pc.get_compounds, subset, selected_columns, namespace='cid')
                     compounds = pd.concat([compounds, comps])
                     time.sleep(0.5)
             else:
-                compounds = pc.get_compounds(cids, selected_columns, namespace='cid')
+                compounds = self._call_with_retry(pc.get_compounds, cids, selected_columns, namespace='cid')
             db_comps = compounds.rename(columns=pc.properties)
 
         return db_comps
@@ -67,7 +97,7 @@ class Database(ABC):
             all_cids = []
             for inchikey in inchikeys:
                 try: # Get CIDs for this inchikey (or first-block)
-                    cids = pcp.get_cids(inchikey, namespace='inchikey', searchtype=None)
+                    cids = self._call_with_retry(pcp.get_cids, inchikey, namespace='inchikey', searchtype=None)
                     if cids:
                         all_cids.extend(cids)
                     time.sleep(0.5)
@@ -81,11 +111,11 @@ class Database(ABC):
                 if len(all_cids) > 1000:
                     for start, end in generate_subsets(len(all_cids), 1000):
                         subset = all_cids[start:end]
-                        comps = pc.get_compounds(subset, selected_columns, namespace='cid')
+                        comps = self._call_with_retry(pc.get_compounds, subset, selected_columns, namespace='cid')
                         compounds = pd.concat([compounds, comps])
                         time.sleep(0.5)
                 else:
-                    compounds = pc.get_compounds(all_cids, selected_columns, namespace='cid')
+                    compounds = self._call_with_retry(pc.get_compounds, all_cids, selected_columns, namespace='cid')
                 if len(compounds) > 0:
                     db_comps = compounds.rename(columns=pc.properties)
 
@@ -108,14 +138,14 @@ class Database(ABC):
         for ids in db_act[id_name].unique():
             try:
                 # Retrieve compound using pubchempy
-                compound = pc.get_compounds(ids, selected_columns, namespace='name')
+                compound = self._call_with_retry(pc.get_compounds, ids, selected_columns, namespace='name')
                 # Check if exactly one compound has been found
                 if len(compound) == 1:
                     pubchem_chembl.append(compound)
                     existing_id.append(ids)
                 else:
                     missing_id.append(ids)
-            except:
+            except Exception:
                 missing_id.append(ids)
             time.sleep(0.5)
 
@@ -129,16 +159,22 @@ class Database(ABC):
 
         # Utilize chembl molecule API for failed Pubchem ids
         if len(missing_id) > 0:
-            chembl.molecule_search(missing_id, inchis, chembl_ids)
+            # clearing both lists immediately before each attempt guards against accumulating duplicates on 
+            # failed previous attempt already appended as well as mutated data.
+            def _molecule_search_clean_retry():
+                inchis.clear()
+                chembl_ids.clear()
+                return chembl.molecule_search(missing_id, inchis, chembl_ids)
+            self._call_with_retry(_molecule_search_clean_retry)
         # Search the inchi for the compound that couldn't be searched by chembl id
         if len(inchis) > 0:
             existing_id = []
             for ids in zip(inchis, chembl_ids):
                 try:
                     # Use Pubchempy to find compounds based on inchi
-                    pubchem_inchi.append(pc.get_compounds(ids[0], selected_columns, namespace='inchi'))
+                    pubchem_inchi.append(self._call_with_retry(pc.get_compounds, ids[0], selected_columns, namespace='inchi'))
                     existing_id.append(ids[1])
-                except:
+                except Exception:
                     None
                 time.sleep(0.5)
         # Check if at least one compound has been found using Pubchempy with inchi
