@@ -28,7 +28,7 @@ Create a local folder, name it `data` and extract the files with the following c
 Although the data used is up to date, each database periodically releases updated versions that will make the zipped data obsolete. 
 For this reason, we suggest periodically redownloading the databases to have the latest CPI information available.
 We also strongly recommend preprocessing the databases to obtain significantly faster execution times. \
-To ease this process, we provide two notebooks to download ([db_download.ipynb](db_download.ipynb)) and preprocess ([db_preprocessing.ipynb](db_preprocessing.ipynb)) the databases.
+To ease this process, we provide a notebook to download and preprocess the data ([db_preprocessing.ipynb](db_preprocessing.ipynb)).
 
 ### SQL Server
 
