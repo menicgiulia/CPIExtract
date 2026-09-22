@@ -300,7 +300,7 @@ Here are two examples:
 # Chlorpromazine InChIKey
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
-[aggegrated_interactions, db_states, raw_interactions] = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=3.0, pchembl_grouping='all')
+[aggegrated_interactions, db_states, raw_interactions] = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=3.0, pchembl_grouping='combined')
 ```
 
 To extract interactions only from selected databases, use the alternate function specifying which databases to use in an underscore-separated string (to include all databases, which equates to using the previous function, use `'pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db'`). In the following example, only four databases are used to limit the output size.
@@ -310,7 +310,7 @@ To extract interactions only from selected databases, use the alternate function
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-[aggegrated_interactions, db_states, raw_interactions] = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=3.0, pchembl_grouping='all')
+[aggegrated_interactions, db_states, raw_interactions] = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=3.0, pchembl_grouping='combined')
 ```
 
 #### Prot2Comp
@@ -325,10 +325,10 @@ Here are two examples:
 # HGNC symbol for Kallikrein-1
 prot_id = 'KLK1'
 
-[aggegrated_interactions, db_states, raw_interactions] = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=3.0, pchembl_grouping='all')
+[aggegrated_interactions, db_states, raw_interactions] = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=3.0, pchembl_grouping='combined')
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-[aggegrated_interactions, db_states, raw_interactions] = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=3.0, pchembl_grouping='all')
+[aggegrated_interactions, db_states, raw_interactions] = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=3.0, pchembl_grouping='combined')
 ```
 
 ## Package Structure
