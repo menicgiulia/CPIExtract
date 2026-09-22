@@ -231,61 +231,23 @@ Before loading the data make sure you are in the parent directory of `data` or a
 
 ```python 
 from cpiextract import Comp2Prot, Prot2Comp
-import pandas as pd
-import os
+from cpiextract.utils import load_dbs, load_pubchem_files, check_status
 
-# Root data path
+# Root data path - files here must use the standardized names load_dbs() expects
 data_path = 'data/Databases/'
 
-#Downloaded from BindingDB on 12/8/2025
-file_path=os.path.join(data_path, 'BindingDB_Dec2025.csv')
-BDB_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
+# Readiness report across all 9 databases before loading
+check_status(data_path)
 
-#Downloaded from STITCH on 2/22/2023 unchanged on 12/8/2025
-file_path=os.path.join(data_path, 'STITCH.csv')
-sttch_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
+# Loads every standardized CSV present into the {key: DataFrame} dict Comp2Prot/Prot2Comp expect
+# Missing databases are skipped with a warning
+dbs = load_dbs(data_path)
 
-#Downloaded from CTD 12/8/2025
-file_path=os.path.join(data_path, 'CTD_Dec2025.csv')
-CTD_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
+# If local PubChem duckdb file is not present, CPIExtract will default to PUG-REST API instead.
+pubchem_files = load_pubchem_files(data_path)
 
-#Downloaded from DTC on 2/24/2023 unchanged on 12/8/2025
-file_path=os.path.join(data_path, 'DTC_Dec2025.csv')
-DTC_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
-
-#Downloaded from DrugBank on 12/8/2025
-file_path=os.path.join(data_path, 'DB_Dec2025.csv')
-DB_data=pd.read_csv(file_path, sep=',',low_memory=False,index_col=0)
-
-#Downloaded from DrugCentral on 2/25/2024 unchanged on 12/8/2025
-file_path=os.path.join(data_path, 'DrugCentral_Dec2025.csv')
-DC_data=pd.read_csv(file_path, sep=',',low_memory=False,index_col=0)
-
-#Downloaded from ChEMBL on 12/8/2025
-file_path=os.path.join(data_path, 'ChEMBL_Dec2025.csv')
-chembl_data=pd.read_csv(file_path,sep=',',low_memory=False,index_col=0)
-
-#Downloaded from OTP on 2/2/2026
-file_path=os.path.join(data_path, 'OTP_Dec2025.csv')
-OTP_data=pd.read_csv(file_path, sep=',',low_memory=False,index_col=0)
-
-# Data stored in pandas dataframes
-dbs = {
-    'chembl': chembl_data,
-    'bdb': BDB_data,
-    'stitch': sttch_data,
-    'ctd': CTD_data,
-    'dtc': DTC_data,
-    'db': DB_data,
-    'dc': DC_data,
-    'otp': OTP_data
-}
-
-# PubChem local data stored as a duckdb file. If not present, CPIExtract will default to querying PubChem Pugrest API. 
-pubchem_files = {'db_file': '/projects/ccnr/sebek.m/CPE_data/pubchem/pubchem.duckdb'}
-
-C2P = Comp2Prot(execution_mode='local', dbs=data, pubchem_files=pubchem_files) #Only include PubChem if local copy is present
-P2C = Prot2Comp(execution_mode='local', dbs=data, pubchem_files=pubchem_files)
+C2P = Comp2Prot(execution_mode='local', dbs=dbs, pubchem_files=pubchem_files)
+P2C = Prot2Comp(execution_mode='local', dbs=dbs, pubchem_files=pubchem_files)
 ```
 
 ##### Option B: Server execution
@@ -308,26 +270,39 @@ P2C = Prot2Comp(execution_mode='server', server_info=info)
 ```
 ### How to run the pipelines
 
-Once instantiated, the user can choose between the functions `comp_interactions` or `comp_interactions_select` for Comp2Prot, and the functions `prot_interactions` or `prot_interactions_select` for Prot2Comp. 
+Once instantiated, the user can choose between the functions `comp_interactions` or `comp_interactions_select` for Comp2Prot, and the functions `prot_interactions` or `prot_interactions_select` for Prot2Comp.
+
+Both classes' functions return a 3-tuple: `(interactions, states, raw_interactions)`. `interactions` is the aggregated, one-row-per-compound-protein-pair result; `raw_interactions` is a concatenation of every source database's own native,
+unharmonized output (its real activity type, value, unit, and assay-identifying columns, before any aggregation); and `states` reports, per source, whether it ran and what happened.
 
 #### Comp2Prot
 
 The function `comp_interactions` from Comp2Prot accepts the following parameters:
 
 - `input_id` - the compound id
-- `pChEMBL_thresh` - the minimum interaction pChEMBL value required to be added to the output file
-- `merge_stereoisomers` - to select whether to consider the specific compound stereochemistry or group all stereoisomer interactions
+- `pChEMBL_thres` - the pChEMBL value above which a pair is classified as a positive interaction rather than negative. It only determines the `interaction_class` label
+  ("negative" vs. positive interactions)
 - `dtc_mutated` - to select whether also to consider interactions with mutated target proteins from DTC
 - `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
-- `verbose` - to select whether pubchem function prints processing
+- `verbose` - to select whether pubchem and DTC functions print processing
+- `pchembl_grouping` - how to compute the average pChEMBL for a pair: `'all'` (one combined average across every standard_type), `'type_group'` (a separate average for K-types like Ki/Kd vs. C50-types like IC50/EC50), or `'unique'` (a separate average
+  per exact standard_type value present in the data)
+- `experimental_thres` - the minimum STITCH/STRING "experimental" confidence score (0-999 scale) required to keep an interaction from the source
+- `protein_types` - which of DrugBank's protein_type categories to include (`target`, `enzyme`, `carrier`, `transporter`). Default is all four.
+- `strong_positive_thres` - the average pchembl above which a positive interaction is classified "strong positive" rather than "weak positive" (i.e. above `pChEMBL_thres` but at or below `strong_positive_thres`)
+- `prebuilt_comp_ids` - an optional, already-resolved compound identifiers DataFrame (as returned by `compound_identifiers()`) to use instead of resolving `input_id`. Useful when calling compounds not present in PubChem
 
-The output will include all the interactions found and a data frame containing the statements for all the datasets for the specific input compound.
+`comp_interactions_select` accepts the same parameters, plus:
+
+- `selected_dbs` - an underscore-separated string naming which databases to query (default: `'pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db'`, i.e. all nine).
+
+Here are two examples:
 
 ```python
 # Chlorpromazine InChIKey
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
-interactions, db_states = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
+[aggegrated_interactions, db_states, raw_interactions] = C2P.comp_interactions(input_id=comp_id, pChEMBL_thres=3.0, pchembl_grouping='all')
 ```
 
 To extract interactions only from selected databases, use the alternate function specifying which databases to use in an underscore-separated string (to include all databases, which equates to using the previous function, use `'pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db'`). In the following example, only four databases are used to limit the output size.
@@ -337,30 +312,25 @@ To extract interactions only from selected databases, use the alternate function
 comp_id = 'ZPEIMTDSQAKGNT-UHFFFAOYSA-N'
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-interactions, db_states = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
+[aggegrated_interactions, db_states, raw_interactions] = C2P.comp_interactions_select(input_id=comp_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=3.0, pchembl_grouping='all')
 ```
 
 #### Prot2Comp
 
-Prot2Comp works similarly, with the exception that both functions only have the following additional parameters, as OTP will retrieve only known compounds interacting with the input protein:
+The functions `prot_interactions` and `prot_interactions_select` from Prot2Comp accepts many of the same parameters as Comp2Prot. Note that `protein_types`, `experimental_thres`, and `prebuilt_comp_ids` are Comp2Prot-only.
 
-- `input_id` - the protein id
-- `pChEMBL_thresh` - the minimum interaction pChEMBL value required to be added to the output file
-- `merge_stereoisomers` - to select whether to consider the specific compound stereochemistry or group all stereoisomer interactions
-- `dtc_mutated` - to select whether also to consider interactions with mutated target proteins from DTC
-- `dc_extra` - to select whether to include possibly non-Homo sapiens interactions
-- `verbose` - to select whether pubchem function prints processing
+The output will include all the interactions found and a data frame containing the statements for all the datasets for the specific input compound.
 
-Here are two examples demonstrating the use of the two functions from Prot2Comp:
+Here are two examples:
 
 ```python
 # HGNC symbol for Kallikrein-1
 prot_id = 'KLK1'
 
-interactions, db_states = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
+[aggegrated_interactions, db_states, raw_interactions] = P2C.prot_interactions(input_id=prot_id, pChEMBL_thres=3.0, pchembl_grouping='all')
 
 # Interactions extracted from PubChem, ChEMBL, DB and DTC only.
-interactions, db_states = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=0, merge_stereoisomers=False, dtc_mutated=False, dc_extra=False)
+[aggegrated_interactions, db_states, raw_interactions] = P2C.prot_interactions_select(input_id=prot_id, selected_dbs='pc_chembl_db_dtc', pChEMBL_thres=3.0, pchembl_grouping='all')
 ```
 
 ## Package Structure
@@ -413,6 +383,7 @@ Root folder organization (```__init__.py``` files removed for simplicity):
     ├───servers                                     
     │   ├───BiomartServer.py                        // to connect to Biomart API
     │   ├───ChEMBLServer.py                         // to connect to ChEMBL API
+    │   ├───MyGeneServer.py                         // to connect to MyGene API
     │   └───PubChemServer.py                        // to connect to PubChem API
     │
     ├───sql_server  
@@ -420,6 +391,8 @@ Root folder organization (```__init__.py``` files removed for simplicity):
     │
     └───utils                                        
         ├───helper.py                               // helper functions and classes
+        ├───load_cpiextract_data.py                 // functions to load databases into memory
+        ├───prepare_cpiextract_data.py              // functions to preprocess databases for CPIExtract use
         └───identifiers.py                          // functions to extract identifiers for compounds and proteins
 ```
 
