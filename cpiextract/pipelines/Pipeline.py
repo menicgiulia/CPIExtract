@@ -186,7 +186,7 @@ class Pipeline(ABC):
         return None
 
     def _aggregate_pchembl(self, data: pd.DataFrame, index: int, comp: pd.DataFrame,
-                            pchembl_thres: float, pchembl_grouping: str = 'all',
+                            pchembl_thres: float, pchembl_grouping: str = 'combined',
                             strong_positive_thres: float = 6.0) -> pd.DataFrame:
         """
         Aggregates pchembl_eq across all measurements for one compound-protein pair, and
@@ -197,13 +197,13 @@ class Pipeline(ABC):
         exactly which case produces which label.
 
         pchembl_grouping controls how the average/std are computed:
-            'all'        - one combined average across every standard_type (default, matches
-                           the original behavior; columns 'pchembl_count'/'ave_pchembl'/
-                           'std_pchembl')
-            'type_group' - separate average for K-types (Ki/Kd/...) vs C50-types (IC50/EC50/
-                           ...) - see TYPE_GROUPS; columns suffixed '_K'/'_C50'
-            'unique'     - separate average per exact standard_type value present in the data;
-                           columns dynamically suffixed with the type itself (e.g. '_IC50')
+            'combined' - computes BOTH a single combined average across every standard_type
+                         (columns 'pchembl_count'/'ave_pchembl'/'std_pchembl', no suffix) AND
+                         a separate average per type-group - K-types (Ki/Kd/...) vs C50-types
+                         (IC50/EC50/...), see TYPE_GROUPS - suffixed '_K'/'_C50' - together in
+                         the same output row, rather than needing to run this twice to get both
+            'unique'   - a separate average per exact standard_type value present in the data;
+                         columns dynamically suffixed with the type itself (e.g. '_IC50')
 
         """
         numeric_eq = pd.to_numeric(comp['pchembl_eq'], errors='coerce')
@@ -211,16 +211,15 @@ class Pipeline(ABC):
         real_mask = numeric_eq.notnull() & (numeric_eq != 0)
         real_values = numeric_eq[real_mask]
 
-        if pchembl_grouping == 'all':
-            groups = {'': real_values}
-        elif pchembl_grouping == 'type_group':
+        if pchembl_grouping == 'combined':
             type_group = comp['standard_type'].map(self.TYPE_GROUPS)
-            groups = {f'_{g}': numeric_eq[real_mask & (type_group == g)] for g in ['K', 'C50']}
+            groups = {'': real_values}
+            groups.update({f'_{g}': numeric_eq[real_mask & (type_group == g)] for g in ['K', 'C50']})
         elif pchembl_grouping == 'unique':
             groups = {f'_{t}': numeric_eq[real_mask & (comp['standard_type'] == t)]
                       for t in comp['standard_type'].dropna().unique()}
         else:
-            raise ValueError(f"pchembl_grouping must be 'all', 'type_group', or 'unique', got '{pchembl_grouping}'")
+            raise ValueError(f"pchembl_grouping must be 'combined' or 'unique', got '{pchembl_grouping}'")
 
         for suffix, vals in groups.items():
             count_col, ave_col, std_col = f'pchembl_count{suffix}', f'ave_pchembl{suffix}', f'std_pchembl{suffix}'

@@ -31,8 +31,8 @@ class Comp2Prot(Pipeline):
     #    - pChEMBL_thresh - the minimum interaction pChEMBL value required to be added to the output file
     #    - dtc_mutated - to select whether also to consider interactions with mutated target proteins from DTC
     #    - dc_extra - to select whether to include possibly non-Homo sapiens interactions
-    #    - pchembl_grouping - how to compute the average pChEMBL for a pair: 'all' (combined),
-    #      'type_group' (K-types vs C50-types separately), or 'unique' (one average per exact type)
+    #    - pchembl_grouping - how to compute the average pChEMBL for a pair: 'combined' (K-types, C50-type, and all averages), 
+    #      or 'unique' (one average per exact type)
     #    - experimental_thres - minimum STITCH/STRING 'experimental' confidence score (0-999) required
     #    - protein_types - which DrugBank protein_type categories to include (target/enzyme/carrier/
     #      transporter); defaults to all four if not specified
@@ -41,7 +41,7 @@ class Comp2Prot(Pipeline):
 
     def comp_interactions(self, input_id: int|str, pChEMBL_thres: float=3.0, 
                     dtc_mutated: bool=False, dc_extra: bool=False,
-                    verbose: bool=False, pchembl_grouping: str='all', experimental_thres: float=400,
+                    verbose: bool=False, pchembl_grouping: str='combined', experimental_thres: float=400,
                     protein_types: set|None=None, strong_positive_thres: float=6.0,
                     prebuilt_comp_ids: pd.DataFrame|None=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     
@@ -59,7 +59,7 @@ class Comp2Prot(Pipeline):
 
     def comp_interactions_select(self, input_id: int|str, selected_dbs: str='pc_chembl_bdb_stitch_ctd_dtc_otp_dc_db', 
                              pChEMBL_thres: float=3.0, dtc_mutated: bool=False, dc_extra: bool=False, 
-                             verbose: bool=False, pchembl_grouping: str='all',
+                             verbose: bool=False, pchembl_grouping: str='combined',
                              experimental_thres: float=400, protein_types: set|None=None,
                              strong_positive_thres: float=6.0,
                              prebuilt_comp_ids: pd.DataFrame|None=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
