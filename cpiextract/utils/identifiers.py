@@ -10,6 +10,33 @@ from ..servers.MyGeneServer import MyGeneServer
 from ..servers.PubChemServer import PubChemServer
 
 
+def _pubchem_call_with_retry(func, *args, max_retries: int = 3, backoff_base: float = 1.0,
+                              verbose: bool = False, **kwargs):
+    """
+    Calls a PubChem-hitting function (pubchempy under the hood) with retry-with-backoff.
+    PubChem's PUG-REST service is known to intermittently return errors/timeouts under
+    load - without this, a single transient failure surfaces identically to "this
+    compound doesn't exist" (both currently fall through to the same broad except:
+    below), which is misleading and wastes the person's time chasing a bad input that
+    was never actually the problem. Retries max_retries times total, waiting
+    backoff_base * 2^attempt seconds between attempts (1s, 2s, 4s by default) before
+    giving up and letting the final exception propagate to the caller's own handling.
+    """
+    last_exception = None
+    for attempt in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries - 1:
+                wait = backoff_base * (2 ** attempt)
+                if verbose:
+                    print(f"  PubChem call failed (attempt {attempt + 1}/{max_retries}): "
+                          f"{e} - retrying in {wait:.1f}s...")
+                time.sleep(wait)
+    raise last_exception
+
+
 # Uniprot format checks:
 #   Format 1 (reviewed Swiss-Prot): [OPQ][0-9][A-Z0-9]{3}[0-9]  e.g. P11473
 #   Format 2 (TrEMBL):              [A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}  e.g. A0A000
@@ -95,7 +122,8 @@ def protein_identifiers(input_id: int | str, gene_server=None, server_select='my
     return input_protein
 
 
-def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bool = False) -> pd.DataFrame:
+def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bool = False,
+                          max_retries: int = 3, retry_backoff: float = 1.0) -> pd.DataFrame:
     """
     Retrieves compound identifiers and synonyms from PubChem.
 
@@ -109,8 +137,18 @@ def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bo
     verbose : bool, default False
         If True, prints a message when the input resolves to a salt (or other
         multi-covalent-component structure) and gets replaced with its PubChem parent
-        compound. Failures in the parent lookup itself are always printed regardless of this
-        flag, since they indicate something going wrong rather than a routine diagnostic.
+        compound, and also prints each PubChem retry attempt as it happens. Desalting
+        failures and PubChem call failures on the final retry attempt are always
+        printed regardless of this flag, since they indicate something going wrong
+        rather than a routine diagnostic.
+    max_retries : int, default 3
+        Number of attempts for each individual PubChem call before giving up and
+        letting the failure propagate. PubChem's API intermittently errors/times out
+        under load; this retries with exponential backoff rather than failing
+        immediately on the first transient issue.
+    retry_backoff : float, default 1.0
+        Base delay in seconds between retry attempts (doubles each attempt: 1s, 2s,
+        4s by default).
 
     Returns
     -------
@@ -128,29 +166,37 @@ def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bo
             identifier_type = None
 
             if isinstance(input_id, int):
-                cids = pcp.get_cids(input_id, namespace='cid', domain='compound',
-                                     cids_type='parent', as_dataframe=False)
-                c = pcp.Compound.from_cid(cids[0])
+                cids = _pubchem_call_with_retry(pcp.get_cids, input_id, namespace='cid', domain='compound',
+                                                 cids_type='parent', as_dataframe=False,
+                                                 max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
+                c = _pubchem_call_with_retry(pcp.Compound.from_cid, cids[0],
+                                              max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
                 original_identifier, identifier_type = input_id, 'cid'
             
             else:
                 # Find input is an inchi
                 if input_id.find('InChI=') == 0: 
-                    cids = pcp.get_cids(input_id, namespace='inchi', searchtype=None, domain='compound',
-                                         cids_type='parent', as_dataframe=False)
-                    c = pcp.Compound.from_cid(cids[0])
+                    cids = _pubchem_call_with_retry(pcp.get_cids, input_id, namespace='inchi', searchtype=None,
+                                                     domain='compound', cids_type='parent', as_dataframe=False,
+                                                     max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
+                    c = _pubchem_call_with_retry(pcp.Compound.from_cid, cids[0],
+                                                  max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
                     original_identifier, identifier_type = input_id, 'inchi'
                 # Find input is a inchikey
                 elif len(input_id) == 27 and input_id.find('-') == 14: 
-                    cids = pcp.get_cids(input_id, namespace='inchikey', searchtype=None, domain='compound',
-                                         cids_type='parent', as_dataframe=False) 
-                    c = pcp.Compound.from_cid(cids[0])
+                    cids = _pubchem_call_with_retry(pcp.get_cids, input_id, namespace='inchikey', searchtype=None,
+                                                     domain='compound', cids_type='parent', as_dataframe=False,
+                                                     max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
+                    c = _pubchem_call_with_retry(pcp.Compound.from_cid, cids[0],
+                                                  max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
                     original_identifier, identifier_type = input_id, 'inchikey'
                 # If not any of the above, assume input is smiles
                 else: 
-                    cids = pcp.get_cids(input_id, namespace='smiles', searchtype=None, domain='compound',
-                                         cids_type='parent', as_dataframe=False) 
-                    c = pcp.Compound.from_cid(cids[0])
+                    cids = _pubchem_call_with_retry(pcp.get_cids, input_id, namespace='smiles', searchtype=None,
+                                                     domain='compound', cids_type='parent', as_dataframe=False,
+                                                     max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
+                    c = _pubchem_call_with_retry(pcp.Compound.from_cid, cids[0],
+                                                  max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
                     original_identifier, identifier_type = input_id, 'smiles'
 
             # CID case: comparing directly against c.cid
@@ -166,7 +212,8 @@ def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bo
             pcs = PubChemServer()
             cid_str = str(c.cid)
             api_columns = pcs.get_columns(list(pcs.properties.values()))
-            data = pcs.get_compounds(cid_str, api_columns, namespace='cid')
+            data = _pubchem_call_with_retry(pcs.get_compounds, cid_str, api_columns, namespace='cid',
+                                             max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
             data = data.rename(columns=pcs.properties)
 
             # InChI/InChIKey/SMILES case: comparing the input identifier against record
@@ -180,7 +227,8 @@ def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bo
                           f"- likely a salt or other multi-component structure.")
 
             # Fetch synonyms
-            synonyms_df = pcs.get_synonyms(cid_str)
+            synonyms_df = _pubchem_call_with_retry(pcs.get_synonyms, cid_str,
+                                                    max_retries=max_retries, backoff_base=retry_backoff, verbose=verbose)
             synonyms = synonyms_df['Synonym'].iloc[0] if len(synonyms_df) > 0 else []
             #print(synonyms)
             # Add IUPAC identifiers into the synonyms list for search in other databases (e.g. ChEMBL)
@@ -200,9 +248,14 @@ def compound_identifiers(input_id: int | str | dict[str, str | int], verbose: bo
             cols = ['input_id'] + [c for c in input_compound.columns if c != 'input_id']
             input_compound = input_compound[cols]
 
-        # Error if input is not the proper format or not found in PubChem
-        except: 
-            raise TypeError("Input needs to be CID, InChI, InChIKey, or SMILES. If error persists, then likely input identifier does not exist on PubChem.")
+        except Exception as e:
+            raise TypeError(
+                f"Failed to resolve compound identifier via PubChem: {e}\n"
+                f"If this is a server/connection error (e.g. 'ServerBusyError', HTTP 503, timeout), "
+                f"PubChem's own service is likely the cause. With service errors, CPIExtract's automatic "
+                f"retries were exhausted, might need to wait for PubChem server stability. "
+                f"Otherwise, confirm the input is a valid CID, InChI, InChIKey, or SMILES string."
+            ) from e
     
     if 'inchikey' in input_compound.columns:
         input_compound = input_compound.copy()
