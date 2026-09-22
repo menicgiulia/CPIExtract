@@ -10,28 +10,20 @@ import pubchempy as pcp
 
 class Database(ABC):
     '''Template of a Database class.Loading,searching,filtering and preprocessing data from a specified database.'''
-    def __init__(self, merge_stereoisomers=False):
+    def __init__(self):
         """
-        Initialize database with stereoisomer matching preference.
-        
-        Parameters
-        ----------
-        merge_stereoisomers : bool, default False
-            Whether to match compounds using only the first block of inchikey.
-            - False: Exact inchikey match
-            - True: First-block match (all stereoisomers)
+        Initialize database
         """
-        self.merge_stereoisomers = merge_stereoisomers
 
     @abstractmethod
-    def interactions(self, *args, **kwargs):
+    def compounds(self, *args, **kwargs):
         """
         Retrieves proteins from the database interacting with compound passed as input.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def compounds(self, *args, **kwargs):
+    def proteins(self, *args, **kwargs):
         """
         Retrieves compounds from the database interacting with proteins passed as input.
         """
@@ -63,11 +55,10 @@ class Database(ABC):
 
     def _pubchem_search_inchikey(self, db_act: pd.DataFrame, columns: list[str], pc: PubChemServer) -> pd.DataFrame:
         db_act = db_act.dropna(subset=['inchikey']) # Drop null values of inchikey
-        if self.merge_stereoisomers: # Extract first blocks for matching all stereoisomers
-            db_act['inchikey_search'] = db_act['inchikey'].apply(pc.get_inchikey_first_block)
-            inchikeys = db_act['inchikey_search'].unique()
-        else:
-            inchikeys = db_act['inchikey'].unique() # Use full inchikey for exact matching
+
+        db_act['inchikey_search'] = db_act['inchikey'].apply(pc.get_inchikey_first_block)
+        inchikeys = db_act['inchikey_search'].unique()
+
         # Create a list from inchikeys to make batch search using Pubchempy
         inchikeys = [str(x) for x in inchikeys if pd.notna(x) and x != '']
         db_comps = pd.DataFrame(columns=columns)

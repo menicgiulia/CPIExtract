@@ -1,6 +1,7 @@
 '''Loading,searching,filtering and preprocessing data from PubChem.'''
 
 import requests
+import json
 import time
 import pandas as pd
 import numpy as np
@@ -19,8 +20,7 @@ from .Database import Database
 class PubChem(Database):
 
     def __init__(self, connection: Connection| None=None, database: pd.DataFrame|None=None, 
-                 merge_stereoisomers=False, bioact_file=None, gene_server=None, server_select='mygene'):
-        super().__init__(merge_stereoisomers)
+                bioact_file=None, gene_server=None, server_select='mygene'):
 
         if gene_server is not None:
             self.gene_server = gene_server
@@ -53,41 +53,143 @@ class PubChem(Database):
         }
         self.data_manager = APIManager(funcs)
 
+    # Recognized concentration units in PubChem's Activity Unit field
+    UNIT_TO_M = {'uM': 1e-6, 'nM': 1e-9}
+
+    # activity names that are convertible to pChEMBL
+    TRUSTED_ACTIVITY_NAMES = {'Ki', 'Kd', 'IC50', 'EC50', 'AC50', 'Potency', 'GI50'}
+
     def _filter_database(self, pubchem_raw: pd.DataFrame, identifier: str, pChEMBL_thres: float) -> pd.DataFrame:
-    
+        """
+        Filters PubChem bioactivity data and derives a pChEMBL-equivalent value.
+
+        Constraints
+        -----------
+            - Activity Outcome must not be 'Unspecified' or 'Inconclusive'. 'Inactive' is kept as negative evidence
+              setting pChEMBL_eq = 0 only if there's no numeric information at all.
+            - Activity Name != 'CD' (no potency measure)
+            - Activity Unit is 'uM' or 'nM'
+            - Activity Qualifier is used to find and control for relational operaters
+              '>' -> weaker/upper bound, '<' -> stronger/lower bound. A '>'-censored
+              row (or an 'Inactive') only counts as a confirmed negative if the derived value
+              is <= pChEMBL_thres. A '<'-censored row only counts as a confirmed positive if it
+              clears pChEMBL_thres.
+
+        Parameters
+        ----------
+        pubchem_raw : DataFrame
+            Raw PubChem bioactivity data
+        identifier : str
+            Column name identifying the compound or protein (e.g. 'CID', 'Target GeneID')
+        pChEMBL_thres : float
+            pChEMBL value used to classify a resolved interaction as positive (above) or
+            negative (at or below)
+
+        Returns
+        -------
+        DataFrame
+            One row per activity record that passed filtering, with pChEMBL_eq / pChEMBL_lt /
+            pChEMBL_gt and standard_type (Ki/IC50/Kd/EC50/Potency/...) columns.
+        """
+
         # Handle different column names between API and bulk file
         activity_col = 'Activity Value' if 'Activity Value' in pubchem_raw.columns else 'Activity Value [uM]'
-    
-        # Drop duplicates, invalid and empty values of identifier and Activity Values
-        pubchem_filt = pubchem_raw.dropna(subset=[identifier, activity_col])
-        pubchem_filt = pubchem_filt[(~pubchem_filt[identifier].eq('')) & (~pubchem_filt[activity_col].eq(''))]
-        # Remove Unspecified, Inactive and Inconclusive activities
-        pubchem_filt = pubchem_filt[(~pubchem_filt['Activity Outcome'].isin(['Unspecified', 'Inactive', 'Inconclusive'])) &
-                                    # Limit measures to Ki, Kd, IC50, EC50, Potency             
+
+        # Drop invalid/empty identifiers
+        pubchem_filt = pubchem_raw.dropna(subset=[identifier])
+        pubchem_filt = pubchem_filt[~pubchem_filt[identifier].eq('')]
+        # Remove records with ambiguous evidence
+        pubchem_filt = pubchem_filt[(~pubchem_filt['Activity Outcome'].isin(['Unspecified', 'Inconclusive'])) &
+                                    # Not a potency measure
                                     (pubchem_filt['Activity Name']!='CD')]
-        # Remove duplicates with same identifier and activity value
-        pubchem_filt = pubchem_filt.drop_duplicates(subset=[identifier, activity_col]).copy()
-        # Remove non-numeric characters from the Activity Value (things like > and <)
-        pubchem_filt[activity_col] = pubchem_filt[activity_col].astype(str).str.replace(r'[^0-9\.]','',regex=True)
-        # Convert strings into numeric values 
-        pubchem_filt[activity_col] = pubchem_filt[activity_col].apply(pd.to_numeric,errors='coerce')
-    
-        # Handle Activity Unit - API has it in column name, bulk file has separate column
+
+        # Find negative associations
+        comment_negative_raw = pubchem_filt['Activity Outcome'] == 'Inactive'
+        # Find associations without pChEMBL values with only eligible when Activity Name
+        trusted_type_raw = pubchem_filt['Activity Name'].isin(self.TRUSTED_ACTIVITY_NAMES)
+        bare_positive_raw = pubchem_filt['Activity Outcome'].isin(['Active', 'Probe']) & trusted_type_raw
+        has_value_raw = pubchem_filt[activity_col].notna() & ~pubchem_filt[activity_col].astype(str).eq('')
+        pubchem_filt = pubchem_filt[has_value_raw | comment_negative_raw | bare_positive_raw]
+
+        # Only trust the value/qualifier for measurement types in TRUSTED_ACTIVITY_NAMES
+        untrusted = ~pubchem_filt['Activity Name'].isin(self.TRUSTED_ACTIVITY_NAMES)
+        pubchem_filt.loc[untrusted, activity_col] = np.nan
+
+        # Remove duplicates with same identifier
+        pubchem_filt = pubchem_filt.drop_duplicates(subset=[identifier, activity_col, 'Activity Name']).copy()
+
+        # Get the relation activities
+        if 'Activity Qualifier' in pubchem_filt.columns:
+            relation = pubchem_filt['Activity Qualifier'].fillna('=').replace('', '=')
+            numeric_str = pubchem_filt[activity_col].astype(str).str.replace(r'[^0-9.]', '', regex=True)
+        else:
+            raw_val = pubchem_filt[activity_col].astype(str)
+            relation = raw_val.str.extract(r'^\s*(>=|<=|>|<)?')[0].fillna('=')
+            numeric_str = raw_val.str.replace(r'[^0-9.]', '', regex=True)
+        pubchem_filt[activity_col] = pd.to_numeric(numeric_str, errors='coerce')
+        pubchem_filt['_relation'] = relation.values
+
+        # Find activity unit
         if 'Activity Unit' in pubchem_filt.columns:
-            # Filter for uM only (bulk file)
-            pubchem_filt = pubchem_filt[pubchem_filt['Activity Unit'] == 'uM']
-        # else: API data already has [uM] in column name, assume all values are uM
-    
-        # Generate pChEMBL values (value is already in uM)
-        pubchem_filt = pubchem_filt[pubchem_filt[activity_col] > 0].copy() # Filter out zero values first to avoid log10(0)
-        pubchem_filt['pchembl_value'] = -np.log10((pubchem_filt[activity_col]/1e6))
-        # Filter interactions by pChEMBL value
-        pubchem_filt = pubchem_filt.loc[pubchem_filt['pchembl_value'] > pChEMBL_thres].reset_index(drop=True) 
+            no_value = pubchem_filt[activity_col].isnull()
+            pubchem_filt = pubchem_filt[pubchem_filt['Activity Unit'].isin(self.UNIT_TO_M) | no_value]
+            unit_to_M = pubchem_filt['Activity Unit'].map(self.UNIT_TO_M)
+        else:
+            # API data has no separate unit column
+            unit_to_M = pd.Series(self.UNIT_TO_M['uM'], index=pubchem_filt.index)
+
+        if len(pubchem_filt) == 0:
+            return pubchem_filt.assign(
+                pChEMBL_eq=pd.Series(dtype=float), pChEMBL_lt=pd.Series(dtype=float),
+                pChEMBL_gt=pd.Series(dtype=float), standard_type=pd.Series(dtype=object))
+
+        has_value = pubchem_filt[activity_col].notnull() & (pubchem_filt[activity_col] > 0)
+
+        # Convert to M for the pChEMBL transform. NaN/non-positive  values propagate as NaN
+        derived = -np.log10(pubchem_filt[activity_col].where(has_value) * unit_to_M)
+        is_gt = pubchem_filt['_relation'].isin(['>', '>=', '>>']) & has_value
+        is_lt = pubchem_filt['_relation'].isin(['<', '<=', '<<']) & has_value
+        is_eq = (pubchem_filt['_relation'] == '=') & has_value
+
+        pubchem_filt['pChEMBL_eq'] = derived.where(is_eq)
+        pubchem_filt['pChEMBL_lt'] = derived.where(is_gt)
+        pubchem_filt['pChEMBL_gt'] = derived.where(is_lt)
+        pubchem_filt['standard_type'] = pubchem_filt['Activity Name']
+        pubchem_filt = pubchem_filt.drop(columns=['_relation'])
+
+        # Only a trusted potency measure is eligible to be treated as presence/absence evidence
+        trusted_type = pubchem_filt['Activity Name'].isin(self.TRUSTED_ACTIVITY_NAMES)
+
+        comment_negative = (pubchem_filt['Activity Outcome'] == 'Inactive') & trusted_type
+        # A '>'-censored row is negative evidence if below pChEMBL_thres
+        true_negatives = comment_negative | (pubchem_filt['pChEMBL_lt'].notnull() & (pubchem_filt['pChEMBL_lt'] <= pChEMBL_thres))
+        # A '<'-censored row is positive evidence if above pChEMBL_thres
+        censored_positive = pubchem_filt['pChEMBL_gt'].notnull() & (pubchem_filt['pChEMBL_gt'] > pChEMBL_thres)
+        # An exact value is retained
+        exact_value = pubchem_filt['pChEMBL_eq'].notnull()
+        # A bare qualitative 'Active' call with no derivable value at all is kept as binary information
+        bare_positive = (pubchem_filt['Activity Outcome'].isin(['Active', 'Probe']) &
+            pubchem_filt['pChEMBL_eq'].isnull() &
+            pubchem_filt['pChEMBL_lt'].isnull() &
+            pubchem_filt['pChEMBL_gt'].isnull() &
+            trusted_type)
+
+        pubchem_filt = pubchem_filt.loc[exact_value | true_negatives | censored_positive | bare_positive].reset_index(drop=True)
+
+        # Bare 'Inactive' calls with no derivable bound at all get an explicit 0. (Any surviving
+        # 'Inactive' row here already passed the trusted_type check above via
+        # comment_negative/true_negatives, so no need to re-check it here.)
+        missing_val_negative = (
+            (pubchem_filt['Activity Outcome'] == 'Inactive') &
+            pubchem_filt['pChEMBL_eq'].isnull() &
+            pubchem_filt['pChEMBL_lt'].isnull()
+        )
+        pubchem_filt.loc[missing_val_negative, 'pChEMBL_eq'] = 0
 
         return pubchem_filt
 
-    def interactions(self, input_comp: pd.DataFrame, pChEMBL_thres: float=0, 
-                     merge_stereoisomers: bool=False, verbose: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_comp: pd.DataFrame, pChEMBL_thres: float=3.0, 
+                    verbose: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from pubchem database interacting with compound passed as input.
 
@@ -105,8 +207,6 @@ class PubChem(Database):
             dictionary of input compound data from which interacting proteins are found
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
-        merge_stereoisomers : bool
-            determines if results respect stereochemical specificity of input compound
         verbose : bool
             states whether API or Local file is in use
             
@@ -114,7 +214,7 @@ class PubChem(Database):
         -------
         DataFrame
             Dataframe of interacting proteins, containing the following values: \\
-            entrez, gene_type, hgnc_symbol, description, datasource (pc), pchembl_value
+            entrez, gene_type, hgnc_symbol, description, datasource (pc), pChEMBL_eq/lt/gt, standard_type
         String
             A statement string describing the outcome of the database search
         DataFrame
@@ -128,41 +228,37 @@ class PubChem(Database):
             else:
                 print("Using PubChem API")
 
-        columns = ['entrez','gene_type','hgnc_symbol','description','pchembl_value','datasource','inchikey']
+        # On self for internal functions
+        self._verbose = verbose
+
+        columns = ['entrez','gene_type','hgnc_symbol','description','pChEMBL_eq','pChEMBL_lt','pChEMBL_gt','standard_type','datasource','inchikey']
         pubchem_act = pd.DataFrame(columns=columns)
         pubchem_raw = pd.DataFrame()
     
         # Determine CID list
-        if merge_stereoisomers:
-            input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
-            if len(input_comp) == 0:
-                return pubchem_act, 'Input compound does not contain inchikey', pubchem_raw
+        input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
+        if len(input_comp) == 0:
+            return pubchem_act, 'Input compound does not contain inchikey', pubchem_raw
         
-            firstblock = input_comp['inchikey_fb'][0]
+        firstblock = input_comp['inchikey_fb'][0]
         
-            # Try local database first
-            if self.use_local:
-                cid_list = self._get_cids_from_firstblock(firstblock)
-                if not cid_list:  # Database empty, use API
-                    try:
-                        cid_list = pcp.get_cids(firstblock, namespace='inchikey', searchtype=None)
-                        if not cid_list:
-                            return pubchem_act, 'No CIDs found for first block inchikey', pubchem_raw
-                    except Exception as e:
-                        return pubchem_act, f'Error retrieving CIDs: {str(e)}', pubchem_raw
-            else:  # No local database, use API
+        # Try local database first
+        if self.use_local:
+            cid_list = self._get_cids_from_firstblock(firstblock)
+            if not cid_list:  # Database empty, use API
                 try:
                     cid_list = pcp.get_cids(firstblock, namespace='inchikey', searchtype=None)
                     if not cid_list:
                         return pubchem_act, 'No CIDs found for first block inchikey', pubchem_raw
                 except Exception as e:
                     return pubchem_act, f'Error retrieving CIDs: {str(e)}', pubchem_raw
-        else:  # Use single CID
-            input_comp = input_comp.dropna(subset=['cid']).reset_index(drop=True)
-            if len(input_comp) > 0:
-                cid_list = [int(input_comp['cid'][0])]
-            else:
-                return pubchem_act, 'Input compound does not contain CID', pubchem_raw
+        else:  # No local database, use API
+            try:
+                cid_list = pcp.get_cids(firstblock, namespace='inchikey', searchtype=None)
+                if not cid_list:
+                    return pubchem_act, 'No CIDs found for first block inchikey', pubchem_raw
+            except Exception as e:
+                return pubchem_act, f'Error retrieving CIDs: {str(e)}', pubchem_raw
         
         # Retrieve bioactivities - local or API
         if self.use_local:
@@ -174,8 +270,7 @@ class PubChem(Database):
             
             statement = 'completed (local)'
             
-        else:
-            # Use API
+        else: # Use API
             raw_cid_data = []
             for cid in cid_list:
                 try:
@@ -197,10 +292,18 @@ class PubChem(Database):
             # Filter database
             pubchem_act = self._filter_database(pubchem_raw, 'Target GeneID', pChEMBL_thres)
             
-            # Get taxonomy via API
-            gene_list = list(pubchem_act['Target GeneID'].unique())
-            gene_tax = self.data_manager.retrieve_raw_data('targets', gene_list)
-            pubchem_act = pubchem_act.merge(gene_tax, left_on='Target GeneID', right_on='GeneID', how='left')
+            # Get taxonomy - use it if SDQ already supplied it in _retrieve_compounds
+            if 'TaxonomyID' not in pubchem_act.columns:
+                pubchem_act['TaxonomyID'] = np.nan
+
+            missing_genes = list(pubchem_act.loc[pubchem_act['TaxonomyID'].isnull(), 'Target GeneID'].unique())
+            if len(missing_genes) > 0:
+                gene_tax = self.data_manager.retrieve_raw_data('targets', missing_genes)
+                gene_tax = gene_tax.rename(columns={'GeneID': 'Target GeneID', 'TaxonomyID': '_fetched_TaxonomyID'})
+                pubchem_act = pubchem_act.merge(gene_tax, on='Target GeneID', how='left')
+                pubchem_act['TaxonomyID'] = pubchem_act['TaxonomyID'].fillna(pubchem_act['_fetched_TaxonomyID'])
+                pubchem_act = pubchem_act.drop(columns=['_fetched_TaxonomyID'])
+
             pubchem_act = pubchem_act.loc[pubchem_act['TaxonomyID']==9606].reset_index(drop=True)
             
             if len(pubchem_act) == 0:
@@ -208,7 +311,7 @@ class PubChem(Database):
             
             statement = 'completed (API)'
         
-        # Get InChIKeys for CIDs (common to both paths)
+        # Get InChIKeys for CIDs
         unique_cids = pubchem_act['CID'].dropna().unique().tolist()
         if len(unique_cids) > 0:
             pc = PubChemServer()
@@ -271,56 +374,106 @@ class PubChem(Database):
 
         return pubchem_act, statement, pubchem_raw
 
-    # Keep existing _retrieve_compounds, _retrieve_targets, _retrieve_proteins methods
     def _retrieve_compounds(self, input_comp_id):
-        pubchem_raw=pd.DataFrame()
+        # Uses PubChem's SDQ (Structured Data Query) agent instead of the PUG-REST to get activity qualifier.
+        pubchem_raw = pd.DataFrame()
         if input_comp_id == '':
-            Des='No Data'
-        else:
-            # Use pug rest to get the information from PubChem
-            url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/%s/assaysummary/JSON'%(str(input_comp_id))
-            response=requests.get(url)
-            time.sleep(0.5) 
-            data=response.json()
-            try:
-                Des=data['Table']
-            except:
-                Des='No Data'
-        
-        if Des!='No Data':
-            # Convert API data into a dataframe
-            raw_columns = data['Table']['Columns']['Column']
-            rows = [row['Cell'] for row in data['Table']['Row']]
-            pubchem_raw = pd.DataFrame(rows, columns=raw_columns)
+            return pubchem_raw
+
+        sdq_url = 'https://pubchem.ncbi.nlm.nih.gov/sdq/sdqagent.cgi'
+        query_template = {
+            "select": ["*"],
+            "collection": "bioactivity",
+            "where": {"ands": [{"cid": str(input_comp_id)}]},
+        }
+
+        all_rows = []
+        start = 1
+        page_size = 10000
+        while True:
+            query = dict(query_template, start=start, limit=page_size)
+            params = {"infmt": "json", "outfmt": "json", "query": json.dumps(query)}
+ 
+            page_rows = None
+            last_error = None
+            for attempt in range(2):
+                try:
+                    response = requests.get(sdq_url, params=params, timeout=60)
+                    time.sleep(0.5)
+                    data = response.json()
+                    page_rows = data['SDQOutputSet'][0]['rows']
+                    break
+                except Exception as e:
+                    last_error = e
+                    if attempt == 0:
+                        time.sleep(1)
+ 
+            if page_rows is None and getattr(self, '_verbose', False):
+                # Both attempts failed. Stop paging rather than looping forever
+                print(f"Warning: PubChem SDQ query failed for CID {input_comp_id} at page "
+                      f"start={start} after 2 attempts ({last_error}). Results for this compound may be incomplete.")
+            if page_rows is None:
+                break
+ 
+            all_rows.extend(page_rows)
+            if len(page_rows) < page_size:
+                break
+            start += page_size
+
+        if len(all_rows) == 0:
+            return pubchem_raw
+
+        raw = pd.DataFrame(all_rows)
+
+        pubchem_raw = pd.DataFrame({
+            'CID': raw.get('cid'),
+            # SDQ returns geneid as a JSON float (e.g. 23097.0); normalize to the same clean integer-string
+            'Target GeneID': raw.get('geneid').apply(lambda x: str(int(x)) if pd.notnull(x) else None) if 'geneid' in raw.columns else None,
+            'Target Accession': raw.get('protacxn'),
+            'Activity Outcome': raw.get('activity'),
+            'Activity Name': raw.get('acname'),
+            'Activity Qualifier': raw.get('acqualifier'),
+            'Activity Value [uM]': raw.get('acvalue'),
+            'Assay Name': raw.get('aidname'),
+            'Assay Type': raw.get('aidtype'),
+            'PubMed ID': raw.get('pmid'),
+            'RNAi': raw.get('rnai'),
+            'TaxonomyID': raw.get('taxid'),
+        })
 
         return pubchem_raw
     
     def _retrieve_targets(self, gene_list) -> pd.DataFrame:
         # Use the PUG REST Pubchem API to assign the tax_id for each gene
         url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/gene/geneid/summary/JSON'
-        if len(gene_list) > 1000: # Prepare the request payload
-            gene_tax = pd.DataFrame(columns=['GeneID', 'TaxonomyID'])
-            for start, end in generate_subsets(len(gene_list), 1000):
-                subset = gene_list[start:end]        
-                payload = {"geneid": ",".join(map(str, subset))}
+
+        def _fetch(subset, attempts=2):
+            payload = {"geneid": ",".join(map(str, subset))}
+            last_error = None
+            for attempt in range(attempts):
                 try:
-                    response=requests.post(url, data=payload)
+                    response = requests.post(url, data=payload)
                     data = response.json()
                     gene_summary_list = data['GeneSummaries']['GeneSummary']
-                    genes = pd.DataFrame(gene_summary_list, columns=['GeneID', 'TaxonomyID'])
-                    gene_tax = pd.concat([gene_tax, genes])
-                except:
-                    continue
+                    return pd.DataFrame(gene_summary_list, columns=['GeneID', 'TaxonomyID'])
+                except Exception as e:
+                    last_error = e
+                    if attempt < attempts - 1:
+                        time.sleep(1)
+            # Both attempts failed, verbose print
+            if getattr(self, '_verbose', False):
+                print(f"Warning: PubChem gene taxonomy lookup failed for {len(subset)} gene(s) "
+                      f"after {attempts} attempt(s) ({last_error}). These genes will be excluded.")
+            return pd.DataFrame(columns=['GeneID', 'TaxonomyID'])
+
+        if len(gene_list) > 1000:
+            gene_tax = pd.DataFrame(columns=['GeneID', 'TaxonomyID'])
+            for start, end in generate_subsets(len(gene_list), 1000):
+                subset = gene_list[start:end]
+                gene_tax = pd.concat([gene_tax, _fetch(subset)])
                 time.sleep(0.5)
         else:
-            payload = {"geneid": ",".join(map(str, gene_list))}
-            try:
-                response=requests.post(url, data=payload)
-                data = response.json()
-                gene_summary_list = data['GeneSummaries']['GeneSummary']
-                gene_tax = pd.DataFrame(gene_summary_list, columns=['GeneID', 'TaxonomyID'])
-            except:
-                gene_tax = pd.DataFrame(columns=['GeneID', 'TaxonomyID'])
+            gene_tax = _fetch(gene_list)
         gene_tax['GeneID'] = gene_tax['GeneID'].astype(str)
         return gene_tax
     
@@ -328,9 +481,27 @@ class PubChem(Database):
         pubchem_raw = pd.DataFrame()
         # Use PUG REST to get the information of gene activity from PubChem
         url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/gene/geneid/%s/concise/JSON' %(str(input_protein_id))
-        response=requests.get(url) 
-        # Retrieve and filter only relevant data
-        data=response.json()
+ 
+        data = None
+        last_error = None
+        attempts = 2
+        for attempt in range(attempts):
+            try:
+                response = requests.get(url)
+                data = response.json()
+                break
+            except Exception as e:
+                last_error = e
+                if attempt < attempts - 1:
+                    time.sleep(1)
+ 
+        if data is None:
+            # Both attempts failed
+            if getattr(self, '_verbose', False):
+                print(f"Warning: PubChem gene concise lookup failed for gene {input_protein_id} "
+                      f"after {attempts} attempt(s) ({last_error}). Returning no data for this protein.")
+            return pubchem_raw
+        
         try:
             Des=data['Table']
         except:
@@ -346,8 +517,8 @@ class PubChem(Database):
 
         return pubchem_raw
 
-    def compounds(self, input_protein: pd.DataFrame, pChEMBL_thres: float=0, 
-                  merge_stereoisomers: bool=False, verbose: bool=False):
+    def proteins(self, input_protein: pd.DataFrame, pChEMBL_thres: float=3.0, 
+                verbose: bool=False):
         """
         Retrieves compounds from pubchem database interacting with proteins passed as input.
 
@@ -364,13 +535,15 @@ class PubChem(Database):
         input_protein : DataFrame
             Dataframe of input proteins from which interacting compound are found
         pChEMBL_thres : float
-            minimum pChEMBL value necessary for interaction to be considered valid
+            pChEMBL value used to classify a resolved interaction as positive (above) or
+            negative (at or below); censored bounds are only kept when they're tight enough to
+            confidently fall on one side of this value.
 
         Returns
         -------
         DataFrame
             Dataframe of interacting compounds, containing the following values: \\
-            inchi, inchikey, smiles, iupac_name, datasource (pc), pchembl_value, notes (activity type)
+            inchi, inchikey, smiles, iupac_name, datasource (pc), pChEMBL_eq/lt/gt, standard_type
         String
             A statement string describing the outcome of the database search
         DataFrame
@@ -384,7 +557,10 @@ class PubChem(Database):
             else:
                 print("Using PubChem API")
 
-        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
+        # On self for internal functions
+        self._verbose = verbose
+
+        columns = ['inchi','inchikey','CID','smiles','connectivity_smiles','iupac_name','datasource','pChEMBL_eq','pChEMBL_lt','pChEMBL_gt','standard_type']
         pubchem_c1 = pd.DataFrame(columns=columns)
         pubchem_raw = pd.DataFrame()
         
@@ -408,16 +584,14 @@ class PubChem(Database):
                 # Query compounds that interact with this protein
                 query = f"""
                     SELECT DISTINCT c.CID, c.InChI, c.InChIKey, 
-                        b."Activity Value", b."Activity Name", b."Activity Unit"
+                        b."Activity Value", b."Activity Name", b."Activity Outcome", b."Activity Unit", b."Activity Qualifier"
                     FROM bioactivities b
                     INNER JOIN cid_inchikey c ON b.CID = c.CID
-                    WHERE CAST(b."Gene ID" AS INTEGER) = {input_protein_id}
-                    AND b."Activity Value" IS NOT NULL
-                    AND b."Activity Outcome" NOT IN ('Unspecified', 'Inconclusive', 'Inactive')
+                    WHERE TRY_CAST(b."Gene ID" AS INTEGER) = {input_protein_id}
+                    AND b."Activity Outcome" NOT IN ('Unspecified', 'Inconclusive')
                     AND b."Activity Name" != 'CD'
-                    AND b."Activity Unit" = 'uM'
+                    AND (b."Activity Unit" IN ('uM', 'nM') OR b."Activity Value" IS NULL)
                 """
-                
                 result = con.execute(query).df()
                 con.close()
                 
@@ -428,17 +602,12 @@ class PubChem(Database):
                         'InChIKey': 'inchikey'
                     })
                     
-                    # Calculate pChEMBL
-                    result['Activity Value'] = result['Activity Value'].astype(str).str.replace(r'[^0-9\.]','',regex=True)
-                    result['Activity Value'] = result['Activity Value'].apply(pd.to_numeric, errors='coerce')
-                    result['pchembl_value'] = -np.log10((result['Activity Value']/1e6))
-                    
-                    # Filter by threshold
-                    result = result[result['pchembl_value'] > pChEMBL_thres].copy()
+                    # Apply the same relation-aware filtering/derivation as every other path
+                    result = self._filter_database(result, 'CID', pChEMBL_thres)
                     
                     if len(result) > 0:
                         # Create output with all required columns
-                        pubchem_c1 = result[['inchi', 'inchikey', 'pchembl_value']].drop_duplicates()
+                        pubchem_c1 = result[['inchi', 'inchikey', 'CID', 'pChEMBL_eq', 'pChEMBL_lt', 'pChEMBL_gt', 'standard_type']].drop_duplicates()
                         pubchem_c1['smiles'] = None  # Will be filled in postprocessing
                         pubchem_c1['iupac_name'] = None  # Will be filled in postprocessing
                         pubchem_c1['datasource'] = 'PubChem'
@@ -491,7 +660,7 @@ class PubChem(Database):
                                 pubchem_act['CID'] = pubchem_act['CID'].astype(int)
                                 compounds['CID'] = compounds['CID'].astype(int)
                                 
-                                pubchem_info = pubchem_act[['CID', 'pchembl_value']].drop_duplicates()
+                                pubchem_info = pubchem_act[['CID', 'pChEMBL_eq', 'pChEMBL_lt', 'pChEMBL_gt', 'standard_type']].drop_duplicates()
                                 
                                 pubchem_c1 = pd.merge(compounds, pubchem_info, on='CID', how='left')
                                 pubchem_c1['datasource'] = 'PubChem'
@@ -558,18 +727,16 @@ class PubChem(Database):
 
             cid_str = ','.join(map(str, cid_list))
     
-            # JOIN with gene_info to filter for human genes in SQL
             pubchem_raw = con.execute(f"""
-                SELECT b.*
+                SELECT b.* EXCLUDE ("Target TaxID"), g.TaxonomyID
                 FROM bioactivities b
-                INNER JOIN gene_info g ON CAST(b."Gene ID" AS INTEGER) = g.GeneID
+                INNER JOIN gene_info g ON TRY_CAST(b."Gene ID" AS INTEGER) = g.GeneID
                 WHERE b.CID IN ({cid_str})
                 AND g.TaxonomyID = 9606
-                AND b."Activity Value" IS NOT NULL
-                AND b."Activity Outcome" NOT IN ('Unspecified', 'Inconclusive', 'Inactive')
+                AND b."Activity Outcome" NOT IN ('Unspecified', 'Inconclusive')
                 AND b."Activity Name" != 'CD'
                 AND b."Gene ID" IS NOT NULL
-                AND b."Activity Unit" = 'uM'
+                AND (b."Activity Unit" IN ('uM', 'nM') OR b."Activity Value" IS NULL)
             """).df()
 
             if len(pubchem_raw) == 0:

@@ -16,9 +16,18 @@ from .Database import Database
 
 class OTP(Database):
 
+    # targetType values, remove complexes
+    VALID_TARGET_TYPES = {'single protein'}
+
+    # actionType values for small molecules
+    VALID_ACTION_TYPES = {'INHIBITOR', 'ANTAGONIST', 'AGONIST', 'BINDING AGENT', 'BLOCKER', 'MODULATOR',
+        'POSITIVE ALLOSTERIC MODULATOR', 'ACTIVATOR', 'PARTIAL AGONIST', 'OPENER',
+        'POSITIVE MODULATOR', 'NEGATIVE ALLOSTERIC MODULATOR', 'NEGATIVE MODULATOR',
+        'INVERSE AGONIST', 'ALLOSTERIC ANTAGONIST', 'CROSS-LINKING AGENT', 'STABILISER',
+        'DISRUPTING AGENT', 'DEGRADER', 'SUBSTRATE'}
+
     def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, chembl_database:pd.DataFrame|None=None, 
-                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
-        super().__init__(merge_stereoisomers)
+                gene_server=None, server_select='mygene'):
 
         if gene_server is not None:
             self.gene_server = gene_server
@@ -37,7 +46,7 @@ class OTP(Database):
     
         # Use local data if provided
         if database is not None:
-            self._local_data = database
+            self._local_data = self._preprocess_local_data(database)
         else:
             # No local data - will use API
             self._local_data = None
@@ -47,14 +56,30 @@ class OTP(Database):
             }
             self.data_manager = APIManager(funcs)
 
-    def interactions(self, input_comp: pd.DataFrame, chembl_ids: list, 
-                     merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def _preprocess_local_data(self, database: pd.DataFrame) -> pd.DataFrame:
+        """
+        Applies the targetType/actionType filters to the local data. Assumes 'chemblIds' and
+        'targets' have ALREADY been exploded into a flat, one-row-per-(chemblId, target)
+        representation upstream (at download time) - this method does not explode them itself.
+        """
+        df = database.copy()
+
+        if 'targetType' in df.columns:
+            df = df[df['targetType'].isin(self.VALID_TARGET_TYPES)]
+        if 'actionType' in df.columns:
+            df = df[df['actionType'].isin(self.VALID_ACTION_TYPES)]
+
+        return df.reset_index(drop=True)
+
+
+    def compounds(self, input_comp: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from OTP interacting with compound passed as input.
 
         Steps
         -----
-        - Retrieves Mechanism interactions using the chembl ids passed as input.
+        - Derives ChEMBL IDs for the input compound from its inchikey.
+        - Retrieves Mechanism interactions using those ChEMBL ids.
         - Uses Biomart to obtain proteins info (modified with data from first API search) to return,
         searching with ensembl peptide id.
         
@@ -62,10 +87,6 @@ class OTP(Database):
         ----------
         input_comp : DataFrame
             Dataframe of input compounds from which interacting proteins are found
-        chembl_ids : list
-            list of chembl ids for the input compounds
-        merge_stereoisomers : bool
-            determines if results respect stereochemical specificity of input compound
             
         Returns
         -------
@@ -82,6 +103,7 @@ class OTP(Database):
         otp_act = pd.DataFrame(columns=columns)
         raw_columns = ['Chembl','mID','mLabel']
         otp_raw = pd.DataFrame(columns=raw_columns)
+        chembl_ids = []
         
         # Use local data only
         if self._local_data is not None:
@@ -90,20 +112,12 @@ class OTP(Database):
                 input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
                 
                 if len(input_comp) > 0:
-                    if merge_stereoisomers:
-                        # Use FirstBlock for stereoisomer matching
-                        inchikey_fb = input_comp['inchikey_fb'][0]
-                        if 'FirstBlock' in self._local_data.columns:
-                            otp_matches = self._local_data[self._local_data['FirstBlock'] == inchikey_fb]
-                            if len(otp_matches) > 0:
-                                chembl_ids.extend(otp_matches['chemblIds'].dropna().unique().tolist())
-                    else:
-                        # Use exact inchikey matching
-                        inchikey = input_comp['inchikey'][0]
-                        if 'inchikey' in self._local_data.columns:
-                            otp_matches = self._local_data[self._local_data['inchikey'] == inchikey]
-                            if len(otp_matches) > 0:
-                                chembl_ids.extend(otp_matches['chemblIds'].dropna().unique().tolist())
+                    # Use exact inchikey matching
+                    inchikey = input_comp['inchikey'][0]
+                    if 'inchikey' in self._local_data.columns:
+                        otp_matches = self._local_data[self._local_data['inchikey'] == inchikey]
+                        if len(otp_matches) > 0:
+                            chembl_ids.extend(otp_matches['chemblIds'].dropna().unique().tolist())
             
             # Query local data
             if len(chembl_ids) > 0 and None not in chembl_ids:
@@ -159,7 +173,7 @@ class OTP(Database):
                                 otp_act.loc[index,'description'] = None
                                 otp_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                         otp_act['datasource'] = 'OTP'
-                        otp_act['pchembl_value'] = np.nan
+                        otp_act['pchembl_eq'] = np.nan
                         statement = 'completed'
                     else:
                         statement = 'Filter reduced interactions to 0'
@@ -177,17 +191,10 @@ class OTP(Database):
                     input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
 
                     if len(input_comp) > 0:
-                        if merge_stereoisomers:
-                            inchikey_fb = input_comp['inchikey_fb'][0]
-                            chembl_matches = self.chembl_db[self.chembl_db['FirstBlock'] == inchikey_fb]
-                            if len(chembl_matches) > 0:
-                                chembl_ids.extend(chembl_matches['Molecule ChEMBL ID'].dropna().unique().tolist())
-                        else:
-                            inchikey = input_comp['inchikey'][0]
-                            inchikey_col = 'standard_inchi_key' if 'standard_inchi_key' in self.chembl_db.columns else 'inchikey'
-                            chembl_matches = self.chembl_db[self.chembl_db[inchikey_col] == inchikey]
-                            if len(chembl_matches) > 0:
-                                chembl_ids.extend(chembl_matches['Molecule ChEMBL ID'].dropna().unique().tolist())
+                        inchikey_fb = input_comp['inchikey_fb'][0]
+                        chembl_matches = self.chembl_db[self.chembl_db['FirstBlock'] == inchikey_fb]
+                        if len(chembl_matches) > 0:
+                            chembl_ids.extend(chembl_matches['Molecule ChEMBL ID'].dropna().unique().tolist())
             
                 # Use ChEMBL API for chembl ids
                 if not chembl_ids:
@@ -246,7 +253,7 @@ class OTP(Database):
                                 otp_act.loc[index,'description'] = None
                                 otp_act.loc[index, 'note'] ='Failed to harmonize gene ID'
                         otp_act['datasource'] = 'OTP'
-                        otp_act['pchembl_value'] = np.nan
+                        otp_act['pchembl_eq'] = np.nan
                         statement = 'completed'
                     else:
                         statement = 'Filter reduced interactions to 0'
@@ -257,7 +264,7 @@ class OTP(Database):
             
         return otp_act, statement, otp_raw
 
-    def compounds(self, input_protein: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def proteins(self, input_protein: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from OTP database interacting with proteins passed as input.
         Uses local data first then use API if local is not available.
@@ -266,8 +273,6 @@ class OTP(Database):
         ----------
         input_protein : DataFrame
             Dataframe of input proteins from which interacting compounds are found
-        merge_stereoisomers : bool
-            Not used in this method
 
         Returns
         -------
@@ -354,7 +359,7 @@ class OTP(Database):
 
                     if len(otp_c1) > 0:
                         otp_c1['datasource'] = 'OTP'
-                        otp_c1['pchembl_value'] = np.nan
+                        otp_c1['pchembl_eq'] = np.nan
                         otp_c1['notes'] = np.nan
                         statement = 'completed'
                     else:
@@ -374,10 +379,9 @@ class OTP(Database):
         met_list = []
 
         for ChEMBLID in chembl_ids:
-            # Set variables object of arguments for GraphQL API
-            variables={"ChEMBL ID": ChEMBLID}
             # Set the Query for the GraphQL API to get the OTP bibliography
-            # This inputs the ChEMBLID variable into the query_string at the %s spot
+            variables={"ChEMBL ID": ChEMBLID}
+            
             query_string="""
             query {
                 drug(chemblId: "%s"){
@@ -385,7 +389,9 @@ class OTP(Database):
                     mechanismsOfAction{
                         rows{
                             mechanismOfAction
+                            actionType
                             targetName
+                            targetType
                                 targets{
                                     id
                                     approvedSymbol
@@ -403,7 +409,7 @@ class OTP(Database):
             while True:
                 try: # Perform request
                     dat=requests.post(base_url,json={"query": query_string,"variables": variables})
-                    #print(dat.status_code) #200 code = Operating Normally
+                    #print(dat.status_code)
                     # Transform API response from JSON to dictionary
                     res=json.loads(dat.text) 
                     break
@@ -414,19 +420,25 @@ class OTP(Database):
             # Check if a matching interaction has been found
             if res['data']['drug'] is not None:
                 for mechanism_row in res['data']['drug']['mechanismsOfAction']['rows']:
+                    # Same targetType/actionType filters as the local data path
+                    if mechanism_row.get('targetType') not in self.VALID_TARGET_TYPES:
+                        continue
+                    if mechanism_row.get('actionType') not in self.VALID_ACTION_TYPES:
+                        continue
                     # Check if the target name exists and if there's at least one target
                     if mechanism_row['targetName'] is not None and len(mechanism_row['targets']) > 0:
-                        try: # Add protein to DataFrame
-                            met_list.append({
-                                'Chembl': ChEMBLID,
-                                'mLabel': mechanism_row['targetName'],
-                                'mID': mechanism_row['targets'][0]['id'],
-                                'PMID': mechanism_row['references'][0]['urls'][0],
-                                'mType': 'GP',
-                                'strength': 'strong'
-                            })
-                        except:
-                            continue
+                        for target in mechanism_row['targets']:
+                            try: # Add protein to DataFrame
+                                met_list.append({
+                                    'Chembl': ChEMBLID,
+                                    'mLabel': mechanism_row['targetName'],
+                                    'mID': target['id'],
+                                    'PMID': mechanism_row['references'][0]['urls'][0],
+                                    'mType': 'GP',
+                                    'strength': 'strong'
+                                })
+                            except:
+                                continue
 
         # Create DataFrame
         otp_met = pd.concat([otp_met, pd.DataFrame(met_list)])
@@ -471,7 +483,7 @@ class OTP(Database):
 
     def _expand_chembl_ids_to_stereoisomers(self, chembl_ids):
         """Expands ChEMBL IDs to include all stereoisomers by looking up first-blocks"""
-        if self.chembl_db is None or not self.merge_stereoisomers:
+        if self.chembl_db is None:
             return chembl_ids
         
         chembl_lookup = self.chembl_db[self.chembl_db['Molecule ChEMBL ID'].isin(chembl_ids)]

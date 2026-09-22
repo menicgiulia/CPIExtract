@@ -13,9 +13,28 @@ from ..data_manager import *
 
 class DrugCentral(Database):
 
+    # ACT_TYPE values within DrugCentral
+    VALID_ACT_TYPES = ['IC50', 'Ki', 'EC50', 'Kd', 'AC50', 'Km', 'app Km']
+
+    # ACTION_TYPE binding indication in DrugCentral
+    INVALID_ACTION_TYPES = ['PHARMACOLOGICAL CHAPERONE', 'RELEASING AGENT', 
+                            'ANTISENSE INHIBITOR', 'ANTIBODY BINDING']
+
+    # TARGET_CLASS removals: non single protein
+    INVALID_TARGET_CLASSES = ['RNA', 'Polyprotein']
+
+    OUTPUT_COLUMNS = ['entrez','gene_type','hgnc_symbol','description',
+               'pChEMBL_eq','pChEMBL_lt','pChEMBL_gt','standard_type','datasource']
+
+    # Final output schema for proteins()
+    PROTEIN_OUTPUT_COLUMNS = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource',
+                'pChEMBL_eq','pChEMBL_lt','pChEMBL_gt','standard_type']
+
+    PUBCHEM_FETCH_COLUMNS = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name',
+                'datasource','pchembl_value']
+
     def __init__(self, connection: Connection|None=None, database: pd.DataFrame|None=None, 
-                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
-        super().__init__(merge_stereoisomers)
+                gene_server=None, server_select='mygene'):
 
         if gene_server is not None:
             self.gene_server = gene_server
@@ -26,41 +45,69 @@ class DrugCentral(Database):
         else:
             raise ValueError(f"server_select must be 'mygene' or 'biomart', got '{server_select}'")
 
-        # if not connection and not database:
-        #     raise ValueError('Either SQL connection or database should be not None')
         if database is not None:
             self.data_manager = LocalManager(database)
         else:
             self.data_manager = SQLManager(connection, 'DC')
 
     def _filter_database(self, dc_raw: pd.DataFrame, dc_extra: bool) -> pd.DataFrame:
-	
-        dc_filt = dc_raw.dropna(subset=['ACTION_TYPE'])
-        dc_filt = dc_filt.loc[(dc_filt['ORGANISM']=='Homo sapiens') &
-                             (dc_filt['ACT_TYPE'].isin(['IC50', 'Ki', 'EC50', 'Kd', 'AC50'])) &
-                             (dc_filt['ACT_SOURCE'] != 'UNKNOWN')]\
+
+        has_valid_act_type = dc_raw['ACT_TYPE'].isin(self.VALID_ACT_TYPES)
+        is_bare_positive_candidate = dc_raw['ACT_VALUE'].isna() & dc_raw['ACTION_TYPE'].notnull()
+        dc_filt = dc_raw.loc[(dc_raw['ORGANISM']=='Homo sapiens') &
+                             (has_valid_act_type | is_bare_positive_candidate) &
+                             (dc_raw['ACT_SOURCE'] != 'UNKNOWN')]\
                                 .drop_duplicates(ignore_index=True).copy()
         if not dc_extra:
-            invalid_action_types = ['PHARMACOLOGICAL CHAPERONE', 'RELEASING AGENT']
-            invalid_classes = ['CD molecules', 'RNA', 'Unclassified', 'Viral envelope protein', 'Polyprotein']
-            dc_filt = dc_filt.loc[(~dc_filt['ACTION_TYPE'].isin(invalid_action_types)) & 
-                                  (~dc_filt['TARGET_CLASS'].isin(invalid_classes))].copy()
+            # ACTION_TYPE exclusion only applies when data is present 
+            dc_filt = dc_filt.loc[(~dc_filt['ACTION_TYPE'].isin(self.INVALID_ACTION_TYPES)) & 
+                                  (~dc_filt['TARGET_CLASS'].isin(self.INVALID_TARGET_CLASSES))].copy()
+
+        # ACCESSION contains complexes, remove for single protein interactions
+        dc_filt = dc_filt[~dc_filt['ACCESSION'].astype(str).str.contains('|', regex=False)].copy()
+
         return dc_filt
-    
+
 
     def _compute_pchembl(self, dc_dat: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
+        """
+        Derives pChEMBL_eq/pChEMBL_lt/pChEMBL_gt from ACT_VALUE using RELATION. 
+        no directional symbols is treated as '='.
 
-        dc_dat = dc_dat[(dc_dat['ACT_VALUE'].notnull()) & (dc_dat['ACT_VALUE'] != 0)]
-		dc_dat['pchembl_value'] = dc_dat['ACT_VALUE']#.apply(lambda x: -np.log10(x / 1e9))
-        dc_act = dc_dat.rename(columns={'ACT_TYPE': 'notes'})
+        Bare positives via statements in ACTION_TYPE. Kept as presence-only evidence
+        no true negative statements exist.
+        """
+        has_value = dc_dat['ACT_VALUE'].notnull() & (dc_dat['ACT_VALUE'] != 0)
 
-        # Filter interactions by pChEMBL value
-        dc_act = dc_act.loc[dc_act['pchembl_value'] > pChEMBL_thres].reset_index(drop=True) 
+        relation = dc_dat['RELATION'].fillna('=').replace(['', '~', '-'], '=')
+        derived = -np.log10(dc_dat['ACT_VALUE'].where(has_value) / 1e9)
+
+        is_gt = relation.isin(['>', '>=']) & has_value
+        is_lt = relation.isin(['<', '<=']) & has_value
+        is_eq = (relation == '=') & has_value
+
+        dc_dat = dc_dat.copy()
+        dc_dat['pChEMBL_eq'] = derived.where(is_eq)
+        dc_dat['pChEMBL_lt'] = derived.where(is_gt)
+        dc_dat['pChEMBL_gt'] = derived.where(is_lt)
+
+        dc_dat['standard_type'] = dc_dat['ACT_TYPE']
+
+        # A '>'-censored row is negative evidence if the bound itself rules out an active result
+        true_negatives = dc_dat['pChEMBL_lt'].notnull() & (dc_dat['pChEMBL_lt'] <= pChEMBL_thres)
+        # A positive only counts as evidence if its lower bound clears the threshold.
+        censored_positive = dc_dat['pChEMBL_gt'].notnull() & (dc_dat['pChEMBL_gt'] > pChEMBL_thres)
+        # An exact value is kept regardless of which side of threshold it falls on
+        exact_value = dc_dat['pChEMBL_eq'].notnull()
+        # No derivable value at all, but a real ACTION_TYPE was recorded kept as binary information
+        bare_positive = (~has_value) & dc_dat['ACTION_TYPE'].notnull()
+
+        dc_act = dc_dat.loc[exact_value | true_negatives | censored_positive | bare_positive].reset_index(drop=True)
 
         return dc_act
 
-    def interactions(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, 
-                     merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_comp: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=3.0, 
+                ) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from DrugCentral database interacting with compound passed as input.
 
@@ -82,21 +129,19 @@ class DrugCentral(Database):
             bool to select whether to include possibly non-Homo sapiens interactions
         pChEMBL_thres : float
             minimum pChEMBL value necessary for interaction to be considered valid
-        merge_stereoisomers : bool
-            determines if results respect stereochemical specificity of input compound  
 
         Returns
         -------
         DataFrame
             Dataframe of interacting proteins, containing the following values: \\
-            entrez, gene_type, hgnc_symbol, description, datasource (DrugCentral), pchembl_value
+            entrez, gene_type, hgnc_symbol, description, datasource (DrugCentral), pChEMBL_eq/lt/gt, standard_type
         String
             A statement string describing the outcome of the database search
         DataFrame
             Raw Dataframe containing all DrugCentral info about the input compound
         """
 
-        columns = ['entrez','gene_type','hgnc_symbol','description','pchembl_value','datasource']
+        columns=self.OUTPUT_COLUMNS
         # Create an empty DataFrame with the specified columns
         dc_act = pd.DataFrame(columns=columns)
         dc_raw = pd.DataFrame()
@@ -104,12 +149,8 @@ class DrugCentral(Database):
         input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
         # Check if there are any input compounds remaining  
         if len(input_comp) > 0:
-            if merge_stereoisomers == True: #FirstBlock only
-                input_comp_id = input_comp['inchikey_fb'][0]
-                dc_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
-            else: #Full inchikey
-                input_comp_id = input_comp['inchikey'][0]
-                dc_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
+            input_comp_id = input_comp['inchikey_fb'][0]
+            dc_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
 
             if len(dc_raw) > 0:
                 # Filter database
@@ -159,8 +200,8 @@ class DrugCentral(Database):
         return dc_act, statement, dc_raw
     
 
-    def compounds(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=0, 
-                  merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def proteins(self, input_protein: pd.DataFrame, dc_extra: bool=False, pChEMBL_thres: float=3.0, 
+                ) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from DrugCentral database interacting with proteins passed as input.
 
@@ -189,14 +230,14 @@ class DrugCentral(Database):
         -------
         DataFrame
             Dataframe of interacting proteins, containing the following values: \\
-            entrez, gene_type, hgnc_symbol, description, datasource (DrugCentral), pchembl_value
+            entrez, gene_type, hgnc_symbol, description, datasource (DrugCentral), pChEMBL_eq/lt/gt, standard_type
         String
             A statement string describing the outcome of the database search
         DataFrame
             Raw Dataframe containing all DrugCentral info about the input compound
         """
 
-        columns = ['inchi','inchikey','smiles','connectivity_smiles','iupac_name','datasource','pchembl_value']
+        columns = self.PROTEIN_OUTPUT_COLUMNS
         # Create an empty DataFrame with the specified columns
         dc_c1 = pd.DataFrame(columns=columns)
         dc_raw = pd.DataFrame()
@@ -220,19 +261,18 @@ class DrugCentral(Database):
 
                     if 'CID' in dc_act.columns:
                         # Retrieve compounds using cids
-                        compounds = self._pubchem_search_cid(dc_act, columns, pc)
+                        compounds = self._pubchem_search_cid(dc_act, self.PUBCHEM_FETCH_COLUMNS, pc)
                         
                         if len(compounds) > 0:
-                            # Add additional values from activity dataframe
                             dc_info = dc_act[['CID', 'ACCESSION', 'TARGET_CLASS', 'ACT_COMMENT',
-                                                'pchembl_value', 'notes']].\
+                                                'pChEMBL_eq', 'pChEMBL_lt', 'pChEMBL_gt', 'standard_type']].\
                                         rename(columns={'ACCESSION': 'uniprotid'}).\
                                                         drop_duplicates()
                             
                             dc_c1 = pd.merge(compounds, dc_info, on='CID', how='left')
                     else:
                         # Filter only columns from pubchempy to return
-                        selected_columns = pc.get_columns(columns[:-2])
+                        selected_columns = pc.get_columns(self.PUBCHEM_FETCH_COLUMNS[:-2])
                         compounds = pd.DataFrame()
                         ids = list(dc_act['inchikey'].unique())
                         for id in ids:
@@ -248,7 +288,7 @@ class DrugCentral(Database):
 
                             # Add additional values from activity dataframe
                             dc_info = dc_act[['inchikey', 'ACCESSION', 'TARGET_CLASS', 'ACT_COMMENT',
-                                                'pchembl_value', 'notes']].\
+                                                'pChEMBL_eq', 'pChEMBL_lt', 'pChEMBL_gt', 'standard_type']].\
                                         rename(columns={'ACCESSION': 'uniprotid'}).\
                                                         drop_duplicates()
                             

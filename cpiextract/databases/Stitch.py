@@ -17,8 +17,7 @@ from .Database import Database
 class Stitch(Database):
     
     def __init__(self,connection:Connection|None=None, database: pd.DataFrame|None=None, 
-                 merge_stereoisomers=False, gene_server=None, server_select='mygene'):
-        super().__init__(merge_stereoisomers)
+                gene_server=None, server_select='mygene'):
 
         if gene_server is not None:
             self.gene_server = gene_server
@@ -36,14 +35,14 @@ class Stitch(Database):
         else:
             self.data_manager = SQLManager(connection, 'Stitch')
 
-    def interactions(self, input_comp: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def compounds(self, input_comp: pd.DataFrame, experimental_thres: float=400) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves proteins from Stitch database interacting with compound passed as input.
 
         Steps
         -----
         - Creates specific and unspecific identifiers from input CID.
-        - Finds matches on the database, based on merge_stereoisomers
+        - Finds matches on the database
         Filters by experimental evidence and human.
         - Links STITCH to STRING to obtain updated protein ids and symbols.
         - Uses API to obtain proteins info searching with ensembl peptide id.
@@ -54,8 +53,9 @@ class Stitch(Database):
             Dataframe containing all DTC database info
         input_comp : DataFrame
             Dataframe of input compounds from which interacting proteins are found
-        merge_stereoisomers : bool
-            determines if results respect stereochemical specificity of input compound
+        experimental_thres : float
+            Minimum STRING/STITCH 'experimental' confidence score (0-999 scale) required to
+            keep an interaction. Defaults to 400, STRING's documented low/medium-confidence boundary
 
         Returns
         -------
@@ -77,19 +77,15 @@ class Stitch(Database):
         input_comp = input_comp.dropna(subset=['inchikey']).reset_index(drop=True)
         # Check if there are any input compounds remaining 
         if len(input_comp) > 0:        
-            if merge_stereoisomers == True: #FirstBlock only
-                input_comp_id = input_comp['inchikey_fb'][0]
-                sttch_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
-            else: #Full inchikey
-                input_comp_id = input_comp['inchikey'][0]
-                sttch_raw = self.data_manager.retrieve_raw_data('inchikey', input_comp_id)
+            input_comp_id = input_comp['inchikey_fb'][0]
+            sttch_raw = self.data_manager.retrieve_raw_data('FirstBlock', input_comp_id)
         
             # Check if at least one match has been found
             if len(sttch_raw) > 0:
-                # Filter STITCH to experimental evidence only
-                sttch_act = sttch_raw.loc[sttch_raw['experimental'] > 0].reset_index(drop=True)
+                # Filter STITCH to experimental evidence at or above the confidence threshold
+                sttch_act = sttch_raw.loc[sttch_raw['experimental'] >= experimental_thres].reset_index(drop=True)
                 # STITCH has no activity values so cannot calculate pChEMBL
-                # The input STITCH data should already be filtered to human only interactions
+                # STITCH data should already be filtered to human only interactions
                 
                 # Check if there is at least one interaction left
                 if len(sttch_act) > 0:
@@ -141,7 +137,8 @@ class Stitch(Database):
                             sttch_act.loc[index,'description'] = None
                             sttch_act.loc[index, 'note'] ='Failed to harmonize gene ID'                  
                     sttch_act['datasource'] = 'Stitch'
-                    sttch_act['pchembl_value'] = np.nan
+                    sttch_act['pchembl_eq'] = np.nan
+                    sttch_act['standard_type'] = np.nan
                     statement = 'completed'
                 else:
                     statement = 'Filter reduced interactions to 0'
@@ -152,7 +149,7 @@ class Stitch(Database):
         return sttch_act, statement, sttch_raw
 
 
-    def compounds(self, input_protein: pd.DataFrame, merge_stereoisomers: bool=False) -> tuple[pd.DataFrame, str, pd.DataFrame]:
+    def proteins(self, input_protein: pd.DataFrame, experimental_thres: float=400) -> tuple[pd.DataFrame, str, pd.DataFrame]:
         """
         Retrieves compounds from Stitch database interacting with proteins passed as input.
 
@@ -169,6 +166,9 @@ class Stitch(Database):
             Dataframe of input proteins from which interacting compound are found
         stitch_data : DataFrame
             Dataframe containing all stitch database info        
+        experimental_thres : float
+            Minimum STRING/STITCH 'experimental' confidence score (0-999 scale) required to
+            keep an interaction. Defaults to 400, STRING's documented low/medium-confidence boundary
 
         Returns
         -------
@@ -212,9 +212,9 @@ class Stitch(Database):
                 stitch_act = stitch_raw.copy()
                 stitch_act['CID'] = stitch_act['chemical'].str.replace(r'^(CIDs|CIDm)', '', regex=True).str.lstrip('0')
                 stitch_act = stitch_act.dropna(subset=['CID'])
-                # Select only non empty cids and experimental values > 0
+                # Select only non empty cids and experimental evidence at or above the confidence threshold
                 stitch_act = stitch_act.loc[(~stitch_act['CID'].eq('')) & 
-                                        (stitch_act['experimental'] > 0)].reset_index(drop=True)
+                                        (stitch_act['experimental'] >= experimental_thres)].reset_index(drop=True)
                 # Check if there are any compounds remaining
                 if len(stitch_act) > 0:
 
@@ -223,7 +223,8 @@ class Stitch(Database):
                     stitch_c1 = self._pubchem_search_cid(stitch_act, columns, pc)
 
                     if len(stitch_c1) > 0:
-                        stitch_c1.loc[:, 'pchembl_value'] = np.nan        
+                        stitch_c1.loc[:, 'pchembl_eq'] = np.nan
+                        stitch_c1.loc[:, 'standard_type'] = np.nan    
                         stitch_c1.loc[:, 'datasource'] = 'Stitch'
                         stitch_c1.loc[:, 'notes'] = np.nan
                         statement = 'completed'
