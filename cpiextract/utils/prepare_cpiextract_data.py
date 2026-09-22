@@ -167,6 +167,26 @@ def add_firstblock_and_link_to_pubchem(df: pd.DataFrame, external_id_col: str,
 # PubChem reference tables (built once, reused by every other database below)
 # ---------------------------------------------------------------------------
 
+def _iter_gzip_lines_with_progress(gz_path: str, desc: str):
+    """
+    Yields lines from a gzip-compressed file with a real, byte-based progress bar -
+    tracking bytes read from the underlying COMPRESSED file (via tqdm.wrapattr) against
+    its known total size. Files like SID-Map.gz and CID-InChI-Key.gz map every PubChem
+    substance/compound record and can be several GB compressed; parsing them line-by-line
+    in pure Python with zero progress feedback previously left no way to tell the
+    difference between "still working" and "hung" (see conversation - this was a
+    regression from the original notebook, which at least had a periodic print every 5M
+    lines; this replaces that with an actual percentage-based progress bar instead).
+    """
+    total_size = os.path.getsize(gz_path)
+    with open(gz_path, 'rb') as raw_f:
+        with tqdm.wrapattr(raw_f, 'read', total=total_size, desc=desc,
+                            unit='B', unit_scale=True) as wrapped_f:
+            with gzip.open(wrapped_f, 'rt') as f:
+                for line in f:
+                    yield line
+
+
 def build_pubchem_reference_tables(data_path: str, force_download: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Builds pc_sid (Source+External_ID -> CID) and pc_cid (CID -> InChIKey), PubChem's
@@ -196,11 +216,10 @@ def build_pubchem_reference_tables(data_path: str, force_download: bool = False)
         src_list = ['BindingDB', 'ChEMBL', 'Comparative Toxicogenomics Database (CTD)',
                     'DrugBank', 'DrugCentral']
         data_4col = []
-        with gzip.open(sid_map_gz, 'rt') as f:
-            for line in f:
-                parts = line.strip().split('\t')
-                if len(parts) == 4:
-                    data_4col.append(parts)
+        for line in _iter_gzip_lines_with_progress(sid_map_gz, "Parsing SID-Map.gz"):
+            parts = line.strip().split('\t')
+            if len(parts) == 4:
+                data_4col.append(parts)
         pc_sid = pd.DataFrame(data_4col, columns=['SID', 'Source', 'External_ID', 'CID'])
         pc_sid['SID'] = pc_sid['SID'].astype(int)
         pc_sid['CID'] = pc_sid['CID'].astype(int)
@@ -219,10 +238,9 @@ def build_pubchem_reference_tables(data_path: str, force_download: bool = False)
                                 cid_inchikey_gz, force=force_download)
 
         data_2col = []
-        with gzip.open(cid_inchikey_gz, 'rt') as f:
-            for line in f:
-                parts = line.strip().split('\t')
-                data_2col.append([parts[0], parts[2]])
+        for line in _iter_gzip_lines_with_progress(cid_inchikey_gz, "Parsing CID-InChI-Key.gz"):
+            parts = line.strip().split('\t')
+            data_2col.append([parts[0], parts[2]])
         pc_cid = pd.DataFrame(data_2col, columns=['CID', 'InChIKey'])
         pc_cid['CID'] = pc_cid['CID'].astype(int)
         pc_cid.to_csv(cid_csv)
