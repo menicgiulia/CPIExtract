@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cpiextract"
-version = "0.2.8" 
+version = "0.2.0" 
 requires-python = ">=3.9"
 description = "CPIExtract is a software package to collect and harmonize small molecule and protein interactions with support for stereoisomer matching."
 readme = { file = "README.md", content-type = "text/markdown" }
