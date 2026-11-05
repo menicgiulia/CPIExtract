@@ -127,6 +127,13 @@ class MyGeneServer(metaclass=Singleton):
         values come from hit['query'] (the original queried ID). All remaining
         columns are resolved via COLUMN_FIELD_MAP against MyGene response fields.
         '''
+        # When querying by a UniProt accession, MyGene returns the gene's full Swiss-Prot
+        # list, whose first entry need not be the accession that was queried. The
+        # databases look targets up by the accession they queried, so the column that
+        # corresponds to the query scope keeps the queried value instead.
+        query_scope = self.SCOPE_MAP.get(input_type)
+        echo_query_fields = {'uniprot.Swiss-Prot'}
+
         records = []
         for hit in hits:
             if hit.get('notfound'):
@@ -139,7 +146,10 @@ class MyGeneServer(metaclass=Singleton):
             # is not in COLUMN_FIELD_MAP (e.g. input_type used as passthrough key)
             for i, col in enumerate(column_names):
                 mygene_field = self.COLUMN_FIELD_MAP.get(col)
-                if mygene_field is not None:
+                if mygene_field is not None and mygene_field == query_scope \
+                        and mygene_field in echo_query_fields and hit.get('query') is not None:
+                    record[col] = hit.get('query')
+                elif mygene_field is not None:
                     record[col] = self._extract_field(hit, mygene_field)
                 elif i == 0:
                     # First column with no field mapping — use query value as passthrough
@@ -162,9 +172,10 @@ class MyGeneServer(metaclass=Singleton):
                 # Explode into separate rows — matches BioMart one-row-per-value behavior
                 df = df.explode(col).reset_index(drop=True)
             else:
-                # Take first value — avoids cartesian product from multi-column explode
+                # Take first value of list cells — avoids cartesian product from
+                # multi-column explode. Scalar cells are kept as they are.
                 df[col] = df[col].apply(
-                    lambda x: x[0] if isinstance(x, list) and x else None
+                    lambda x: (x[0] if x else None) if isinstance(x, list) else x
                 )
 
         return df
