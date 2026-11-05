@@ -80,7 +80,8 @@ class DrugCentral(Database):
         has_value = dc_dat['ACT_VALUE'].notnull() & (dc_dat['ACT_VALUE'] != 0)
 
         relation = dc_dat['RELATION'].fillna('=').replace(['', '~', '-'], '=')
-        derived = -np.log10(dc_dat['ACT_VALUE'].where(has_value) / 1e9)
+        # ACT_VALUE is already pX = -log10(M); no transformation needed
+        derived = dc_dat['ACT_VALUE'].where(has_value)
 
         is_gt = relation.isin(['>', '>=']) & has_value
         is_lt = relation.isin(['<', '<=']) & has_value
@@ -88,14 +89,15 @@ class DrugCentral(Database):
 
         dc_dat = dc_dat.copy()
         dc_dat['pChEMBL_eq'] = derived.where(is_eq)
-        dc_dat['pChEMBL_lt'] = derived.where(is_gt)
-        dc_dat['pChEMBL_gt'] = derived.where(is_lt)
+        # Same polarity as pChEMBL: '<' -> upper bound, '>' -> lower bound
+        dc_dat['pChEMBL_lt'] = derived.where(is_lt)
+        dc_dat['pChEMBL_gt'] = derived.where(is_gt)
 
         dc_dat['standard_type'] = dc_dat['ACT_TYPE']
 
-        # A '>'-censored row is negative evidence if the bound itself rules out an active result
+        # A '<'-censored row (upper bound) is negative evidence if the bound itself rules out an active result
         true_negatives = dc_dat['pChEMBL_lt'].notnull() & (dc_dat['pChEMBL_lt'] <= pChEMBL_thres)
-        # A positive only counts as evidence if its lower bound clears the threshold.
+        # A '>'-censored row (lower bound) only counts as positive evidence if the bound clears the threshold.
         censored_positive = dc_dat['pChEMBL_gt'].notnull() & (dc_dat['pChEMBL_gt'] > pChEMBL_thres)
         # An exact value is kept regardless of which side of threshold it falls on
         exact_value = dc_dat['pChEMBL_eq'].notnull()
