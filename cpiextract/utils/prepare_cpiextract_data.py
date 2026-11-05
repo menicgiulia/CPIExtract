@@ -745,6 +745,9 @@ def _extract_drugbank_protein_info(protein_element, ns) -> dict:
     protein_data['protein_id'] = p_id.text if p_id is not None else ''
     protein_data['protein_name'] = p_name.text if p_name is not None else ''
     protein_data['organism'] = p_organism.text if p_organism is not None else ''
+    actions = [a.text.strip().lower() for a in protein_element.findall('db:actions/db:action', ns)
+               if a.text and a.text.strip()]
+    protein_data['actions'] = '|'.join(actions)
 
     external_ids = {}
     polypeptide = protein_element.find('db:polypeptide', ns)
@@ -797,6 +800,7 @@ def _parse_drugbank_xml(root) -> list[dict]:
                     'pubchem_cid': pubchem_cid, 'inchikey': inchikey,
                     'protein': protein_info['protein_id'], 'protein_type': protein_type,
                     'protein_name': protein_info['protein_name'], 'organism': protein_info['organism'],
+                    'actions': protein_info['actions'],
                 }
                 row.update(protein_info['external_ids'])
                 all_rows.append(row)
@@ -825,7 +829,7 @@ def prepare_drugbank(data_path: str) -> None:
 
     DB_data = pd.DataFrame(rows)
     base_columns = ['drugbank_id', 'name', 'synonyms', 'pubchem_cid', 'inchikey',
-                     'protein', 'protein_type', 'protein_name', 'organism']
+                     'protein', 'protein_type', 'protein_name', 'organism', 'actions']
     if len(DB_data) > 0:
         external_id_columns = sorted(c for c in DB_data.columns if c not in base_columns)
         DB_data = DB_data[base_columns + external_id_columns]
