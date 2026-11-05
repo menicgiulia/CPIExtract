@@ -1,8 +1,21 @@
 '''The server to perform ChEMBL requests.'''
 
 import time
-from chembl_webresource_client.new_client import new_client
 import pandas as pd
+
+_NEW_CLIENT = None
+
+def _new_client():
+    '''
+    Importing new_client makes a live request to the ChEMBL API to prevent 
+    failure on `import cpiextract` fail whenever ChEMBL API is down 
+    even for local/SQL runs that never use it.
+    '''
+    global _NEW_CLIENT
+    if _NEW_CLIENT is None:
+        from chembl_webresource_client.new_client import new_client
+        _NEW_CLIENT = new_client
+    return _NEW_CLIENT
 
 class ChEMBLServer(object):
     '''The server to perform ChEMBL requests.'''
@@ -41,7 +54,7 @@ class ChEMBLServer(object):
                 syns = row['synonyms']
                 for syn in syns:
                     try:
-                        molecule = new_client.molecule # This uses the chembl webresource client to find chembl ids
+                        molecule = _new_client().molecule # This uses the chembl webresource client to find chembl ids
                         molS = molecule.filter(molecule_synonyms__molecule_synonym__iexact=syn)\
                                                 .only(['molecule_chembl_id'])
                         molE = molecule.filter(pref_name__iexact=syn).only(['molecule_chembl_id'])
@@ -55,7 +68,7 @@ class ChEMBLServer(object):
                     except:
                         # API not working, wait 5 seconds
                         time.sleep(5)
-            chembl_total = chemblEx.extend(chemblSyn)
+            chembl_total = chemblEx + chemblSyn  # list.extend() returns None
             
         # If search is with ChEMBL or PubChem search was not successful 
         if not pubchem_ids or (chembl_total == [] and pubchem_ids):  
@@ -65,7 +78,7 @@ class ChEMBLServer(object):
             inchikey = compound['inchikey'][0]
             if pd.notna(inchikey):
                 try:
-                    molecule = new_client.molecule
+                    molecule = _new_client().molecule
                     mols = molecule.filter(molecule_structures__standard_inchi_key=inchikey).only(['molecule_chembl_id'])
                     # Add all inchikey hits
                     if len(mols) > 0:
@@ -77,7 +90,7 @@ class ChEMBLServer(object):
             smiles = compound['isomeric_smiles'][0]
             if pd.notna(smiles):
                 try:
-                    molecule = new_client.molecule
+                    molecule = _new_client().molecule
                     # Add all smiles hits
                     mols=molecule.filter(molecule_structures__canonical_smiles__connectivity=smiles)\
                                             .only(['molecule_chembl_id'])
@@ -104,7 +117,7 @@ class ChEMBLServer(object):
         max_attempts = 10
         while True:
             try:
-                molecule = new_client.molecule
+                molecule = _new_client().molecule
                 molecule.set_format('json')
                 record_via_client = molecule.filter(molecule_chembl_id__in=ids).only(['molecule_chembl_id','molecule_structures'])
                 for record in record_via_client:
