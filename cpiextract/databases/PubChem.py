@@ -115,17 +115,20 @@ class PubChem(Database):
         untrusted = ~pubchem_filt['Activity Name'].isin(self.TRUSTED_ACTIVITY_NAMES)
         pubchem_filt.loc[untrusted, activity_col] = np.nan
 
-        # Remove duplicates with same identifier
-        pubchem_filt = pubchem_filt.drop_duplicates(subset=[identifier, activity_col, 'Activity Name']).copy()
+        # Remove duplicate measurements
+        dedup_cols = [identifier] + [c for c in ['CID', 'Target GeneID']
+                                     if c != identifier and c in pubchem_filt.columns]
+        pubchem_filt = pubchem_filt.drop_duplicates(subset=dedup_cols + [activity_col, 'Activity Name']).copy()
 
         # Get the relation activities
         if 'Activity Qualifier' in pubchem_filt.columns:
             relation = pubchem_filt['Activity Qualifier'].fillna('=').replace('', '=')
-            numeric_str = pubchem_filt[activity_col].astype(str).str.replace(r'[^0-9.]', '', regex=True)
+            # Extract the first number, keeping sign and scientific-notation exponent
+            numeric_str = pubchem_filt[activity_col].astype(str).str.extract(r'([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)', expand=False)
         else:
             raw_val = pubchem_filt[activity_col].astype(str)
             relation = raw_val.str.extract(r'^\s*(>=|<=|>|<)?')[0].fillna('=')
-            numeric_str = raw_val.str.replace(r'[^0-9.]', '', regex=True)
+            numeric_str = raw_val.str.extract(r'([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)', expand=False)
         pubchem_filt[activity_col] = pd.to_numeric(numeric_str, errors='coerce')
         pubchem_filt['_relation'] = relation.values
 
