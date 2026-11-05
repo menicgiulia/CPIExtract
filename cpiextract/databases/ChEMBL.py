@@ -60,6 +60,18 @@ class ChEMBL(Database):
     # Units that are ALREADY on a pChEMBL-equivalent (-log10) scale
     P_SCALE_UNITS = {'pKi', 'pKd', 'pIC50', 'pEC50', 'pA2', 'pKB'}
 
+    # Activity types ChEMBL itself defines pchembl_value for
+    PCHEMBL_CONC_TYPES = {'IC50', 'XC50', 'EC50', 'AC50', 'Ki', 'Kd', 'Potency'}
+
+    # activity_comment values, compared case-insensitively
+    INVALID_COMMENTS = {'not determined', 'not evaluated', 'inconclusive', 'undetermined', 'no data'}
+    NEGATIVE_COMMENTS = {'not active', 'inactive'}
+
+    @staticmethod
+    def _normalize_comment(comments: pd.Series) -> pd.Series:
+        '''Lowercase and strip activity_comment so e.g. 'Inactive' and 'inactive' match.'''
+        return comments.astype('string').str.strip().str.lower()
+
     def _standard_value_to_nM(self, standard_units: str) -> float:
         """
         Returns the multiplier that converts a standard_value reported in
@@ -102,10 +114,9 @@ class ChEMBL(Database):
         return np.nan
 
     def _filter_database_pre(self, chembl_raw: pd.DataFrame, pChEMBL_thres: float) -> pd.DataFrame:
-        # Records with no evidence either way -> excluded entirely
-        invalid_activities = ['Not Determined', 'Not Evaluated', 'inconclusive', 'undetermined', 'No data']
-        # Records that are True Negatives (tested, no interaction found)
-        negative_activities = ['Not Active', 'inactive']
+        # Records with no evidence either way -> excluded entirely (INVALID_COMMENTS)
+        # Records that are True Negatives, tested with no interaction found (NEGATIVE_COMMENTS)
+        comment_norm = self._normalize_comment(chembl_raw['activity_comment'])
 
         # ChEMBL only computes pchembl_value when data_validity_comment is NULL or exactly 'Manually validated'
         valid_validity = (chembl_raw['data_validity_comment'].isnull() |
@@ -115,27 +126,33 @@ class ChEMBL(Database):
                     # Remove all non-human
                     (chembl_raw['organism'] == 'Homo sapiens') &  
                     # Remove various activity comments
-                    (~chembl_raw['activity_comment'].isin(invalid_activities)) &  
+                    (~comment_norm.isin(self.INVALID_COMMENTS).fillna(False)) &  
                     # Only use interactions extracted from scientific literature
                     (chembl_raw['src_id'] == 1) &  
                     # Only use interactions with no (or manually-cleared) data validity comments
                     valid_validity
-                ].drop_duplicates(subset=['activity_comment', 'molecule_chembl_id', 'pchembl_value', 'standard_value']).copy()
+                ].drop_duplicates(subset=['activity_comment', 'molecule_chembl_id', 'target_chembl_id',
+                                          'standard_type', 'pchembl_value', 'standard_value']).copy()
 
         # Clean/coerce numeric fields
-        chembl_act['pchembl_value'] = chembl_act['pchembl_value'].apply(lambda x: re.sub(r'[^0-9.]', '', x) if type(x) is str else x)
+        # Extract the first number, keeping sign and scientific-notation exponent
+        _num_re = re.compile(r'([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)')
+        chembl_act['pchembl_value'] = chembl_act['pchembl_value'].apply(
+            lambda x: (m.group(1) if (m := _num_re.search(x)) else None) if type(x) is str else x)
         chembl_act['pchembl_value'] = chembl_act['pchembl_value'].apply(pd.to_numeric, errors='coerce')
         chembl_act['standard_value'] = pd.to_numeric(chembl_act['standard_value'], errors='coerce')
 
         # Comment-based true negatives
-        comment_negative = chembl_act['activity_comment'].isin(negative_activities)
+        comment_negative = self._normalize_comment(chembl_act['activity_comment']).isin(self.NEGATIVE_COMMENTS).fillna(False)
 
         # Censored (inequality) evidence: kept OUT of pchembl_value/ave_pChEMBL/std_pChEMBL
         no_pchembl = chembl_act['pchembl_value'].isnull()
 
         nM_multiplier = chembl_act['standard_units'].apply(self._standard_value_to_nM)
         concentration_nM = chembl_act['standard_value'] * nM_multiplier
-        concentration_has_value = concentration_nM.notnull() & (concentration_nM > 0)
+        is_pchembl_type = chembl_act['standard_type'].isin(self.PCHEMBL_CONC_TYPES)
+        # Only potency-type measurements may be converted from a concentration
+        concentration_has_value = concentration_nM.notnull() & (concentration_nM > 0) & is_pchembl_type
         concentration_derived = -np.log10(concentration_nM.where(concentration_has_value) * 1e-9)
 
         assoc_multiplier = chembl_act['standard_units'].apply(self._assoc_to_invM)
@@ -183,7 +200,7 @@ class ChEMBL(Database):
 
         # Rows still unresolved (no exact pchembl_value, no molar/assoc/p-scale-derived value, not a comment-negative)
         is_mass_volume_unit = chembl_act['standard_units'].isin(self.MASS_VOLUME_TO_G_PER_L)
-        pending_mw = chembl_act['pchembl_value'].isnull() & is_mass_volume_unit
+        pending_mw = chembl_act['pchembl_value'].isnull() & is_mass_volume_unit & is_pchembl_type
 
         chembl_act['_pending_mw'] = pending_mw
 
@@ -221,8 +238,7 @@ class ChEMBL(Database):
             chembl_act.loc[lower_bound, 'pChEMBL_gt'] = mass_derived.loc[lower_bound]
             chembl_act.loc[fill_eq, 'pchembl_value'] = mass_derived.loc[fill_eq]
 
-        negative_activities = ['Not Active', 'inactive']
-        comment_negative = chembl_act['activity_comment'].isin(negative_activities)
+        comment_negative = self._normalize_comment(chembl_act['activity_comment']).isin(self.NEGATIVE_COMMENTS).fillna(False)
 
         # Decide keep/drop only for rows that were left pending
         keep_pending = (chembl_act['pchembl_value'].notnull() |
@@ -235,7 +251,7 @@ class ChEMBL(Database):
 
         # Bare true negatives with no numeric evidence at all get an explicit 0 in pchembl_value.
         missing_val_negative = (
-            chembl_act['activity_comment'].isin(negative_activities) &
+            self._normalize_comment(chembl_act['activity_comment']).isin(self.NEGATIVE_COMMENTS).fillna(False) &
             chembl_act['pchembl_value'].isnull() &
             chembl_act['pChEMBL_lt'].isnull()
         )
