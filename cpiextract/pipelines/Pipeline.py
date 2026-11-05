@@ -86,6 +86,10 @@ class Pipeline(ABC):
 
         self.sources = ['PubChem', 'ChEMBL', 'BindingDB', 'Stitch', 'CTD', 'DTC', 'OTP', 'DrugCentral', 'DrugBank']
 
+    # Sources whose inactive calls (pchembl_eq == 0) are literature-curated and may override
+    # measured values in _aggregate_pchembl. PubChem's are mostly HTS 'Inactive' outcomes.
+    CURATED_NEGATIVE_SOURCES = {'ChEMBL', 'DTC'}
+
     TYPE_GROUPS = {
         # K-group: binding/dissociation/affinity constants
         'Ki': 'K', 'KI': 'K', 'Kd': 'K', 'KD': 'K', '1/KI': 'K', 'Km': 'K', 'app Km': 'K',
@@ -192,8 +196,12 @@ class Pipeline(ABC):
         Aggregates pchembl_eq across all measurements for one compound-protein pair, and
         classifies the pair into a new 'interaction_class' column: 
             'strong positive'/'weak positive' (quantitative, split at strong_positive_thres)
-            'negative' (below pchembl_thres or a curator-supplied inactive call)
+            'negative' (below pchembl_thres, or an inactive call from a CURATED_NEGATIVE_SOURCES source)
+            'ambiguous' (conflicting evidence, see the classification logic)
             'qualitative positive'/'qualitative negative' (see the classification logic)
+
+        When a source-level list has no real values for a group, its count is 0 and its
+        ave/std are NaN (the columns stay numeric).
 
         pchembl_grouping controls how the average/std are computed:
             'combined' - computes BOTH a single combined average across every standard_type
@@ -206,9 +214,20 @@ class Pipeline(ABC):
 
         """
         numeric_eq = pd.to_numeric(comp['pchembl_eq'], errors='coerce')
-        has_zero = (numeric_eq == 0).any()
+        numeric_lt = pd.to_numeric(comp['pchembl_lt'], errors='coerce')
+        numeric_gt = pd.to_numeric(comp['pchembl_gt'], errors='coerce')
+        zero_mask = numeric_eq == 0
+        has_zero = zero_mask.any()
+        # Only inactive calls from literature-curated sources may override measured values.
+        # PubChem zeros are mostly HTS 'Inactive' calls and do not.
+        has_curated_zero = (zero_mask & comp['datasource'].isin(self.CURATED_NEGATIVE_SOURCES)).any()
         real_mask = numeric_eq.notnull() & (numeric_eq != 0)
         real_values = numeric_eq[real_mask]
+        # Valueless positive evidence: a row with no number at all (e.g. a bare PubChem 'Active'
+        # or a DrugBank/CTD/OTP/STITCH record), or a lower bound that clears the threshold
+        bare_positive = numeric_eq.isnull() & numeric_lt.isnull() & numeric_gt.isnull()
+        censored_positive = numeric_gt > pchembl_thres
+        has_unquantified_positive = (bare_positive | censored_positive).any()
 
         if pchembl_grouping == 'combined':
             type_group = comp['standard_type'].map(self.TYPE_GROUPS)
@@ -225,9 +244,7 @@ class Pipeline(ABC):
 
             for c in (ave_col, std_col):
                 if c not in data.columns:
-                    data[c] = pd.Series([None] * len(data), index=data.index, dtype='object')
-                elif data[c].dtype != 'object':
-                    data = data.astype({c: 'object'})
+                    data[c] = np.nan
 
             if len(vals) > 0:
                 data.loc[index, count_col] = len(vals)
@@ -235,25 +252,31 @@ class Pipeline(ABC):
                 with np.errstate(invalid='ignore'):
                     data.loc[index, std_col] = np.std(vals) if len(vals) > 1 else 0.0
             else:
+                # No measured values: count 0, NaN average/std (keeps the columns numeric)
                 data.loc[index, count_col] = 0
-                data.loc[index, ave_col] = 'Sources do not provide activity data'
-                data.loc[index, std_col] = 'Sources do not provide activity data'
+                data.loc[index, ave_col] = np.nan
+                data.loc[index, std_col] = np.nan
 
         def _positive_tier(value: float) -> str:
             return 'strong positive' if value > strong_positive_thres else 'weak positive'
 
         if len(real_values) > 0:
             ave = real_values.mean()
-            if has_zero or ave <= pchembl_thres:
-                #Curator-supplied inactive call overrides user-supplied pchembl_thres
+            if has_curated_zero or ave <= pchembl_thres:
+                # A literature-curated inactive call overrides the user-supplied pchembl_thres.
+                # Uncurated (HTS) inactive calls do not override measured values.
                 classification = 'negative'
             else:
                 classification = _positive_tier(ave)
         elif has_zero:
-            classification = 'qualitative negative'
+            if has_curated_zero or not has_unquantified_positive:
+                classification = 'qualitative negative'
+            else:
+                # An uncurated (HTS) inactive call against valueless positive evidence
+                classification = 'ambiguous'
         else:
-            lt_vals = pd.to_numeric(comp['pchembl_lt'], errors='coerce').dropna()
-            gt_vals = pd.to_numeric(comp['pchembl_gt'], errors='coerce').dropna()
+            lt_vals = numeric_lt.dropna()
+            gt_vals = numeric_gt.dropna()
             if len(gt_vals) > 0 and gt_vals.mean() > pchembl_thres:
                 classification = _positive_tier(gt_vals.mean())
             elif len(lt_vals) > 0 and lt_vals.mean() <= pchembl_thres:
