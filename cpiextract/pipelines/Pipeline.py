@@ -190,11 +190,10 @@ class Pipeline(ABC):
                             strong_positive_thres: float = 6.0) -> pd.DataFrame:
         """
         Aggregates pchembl_eq across all measurements for one compound-protein pair, and
-        classifies the pair into a new 'interaction_class' column: 'strong positive'/'weak
-        positive' (quantitative, split at strong_positive_thres)/'negative'/'ambiguous' when a
-        real number places the pair on the pChEMBL scale, or 'qualitative positive'/
-        'qualitative negative' when nothing does - see the classification logic below for
-        exactly which case produces which label.
+        classifies the pair into a new 'interaction_class' column: 
+            'strong positive'/'weak positive' (quantitative, split at strong_positive_thres)
+            'negative' (below pchembl_thres or a curator-supplied inactive call)
+            'qualitative positive'/'qualitative negative' (see the classification logic)
 
         pchembl_grouping controls how the average/std are computed:
             'combined' - computes BOTH a single combined average across every standard_type
@@ -245,7 +244,11 @@ class Pipeline(ABC):
 
         if len(real_values) > 0:
             ave = real_values.mean()
-            classification = _positive_tier(ave) if ave > pchembl_thres else 'negative'
+            if has_zero or ave <= pchembl_thres:
+                #Curator-supplied inactive call overrides user-supplied pchembl_thres
+                classification = 'negative'
+            else:
+                classification = _positive_tier(ave)
         elif has_zero:
             classification = 'qualitative negative'
         else:
