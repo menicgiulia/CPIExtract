@@ -47,7 +47,7 @@ class DB(Database):
         """
         if pd.isna(actions_str) or not str(actions_str).strip():
             return True
-        individual_actions = {a.strip() for a in str(actions_str).split('|')}
+        individual_actions = {a.strip().lower() for a in str(actions_str).split('|')}
         return len(individual_actions & DB.VALID_ACTIONS) > 0
 
     def __init__(self, connection:Connection|None=None, database:pd.DataFrame|None=None, 
