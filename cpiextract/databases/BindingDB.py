@@ -69,14 +69,14 @@ class BindingDB(Database):
         """
         # Remove all non-human interactions
         bdb_filt = bdb_raw.loc[bdb_raw['Target Source Organism According to Curator or DataSource']=='Homo sapiens'].copy()
-        # Remove >, <, and C characters
-        bdb_filt['Temp (C)'] = bdb_filt['Temp (C)'].str.replace(r'[^0-9\.]','',regex=True)
+        # Take the first number (e.g. '25 +/- 2 C' -> '25'); stripping all non-digits would merge digits ('252')
+        bdb_filt['Temp (C)'] = bdb_filt['Temp (C)'].astype('string').str.extract(r'([-+]?(?:\d+(?:\.\d*)?|\.\d+))', expand=False)
         # Convert strings to numeric values 
-        bdb_filt['Temp (C)'] = bdb_filt['Temp (C)'].apply(pd.to_numeric, errors='coerce') 
+        bdb_filt['Temp (C)'] = pd.to_numeric(bdb_filt['Temp (C)'], errors='coerce').astype(float) 
         # Filter temperature (also accept null values)
-        bdb_filt = bdb_filt.loc[(bdb_filt['Temp (C)'].isnull()) | (bdb_filt['Temp (C)'] < 40) &
+        bdb_filt = bdb_filt.loc[((bdb_filt['Temp (C)'].isnull()) | (bdb_filt['Temp (C)'] < 40)) &
                             # Filter pH (also accept null values)
-                            ((bdb_filt['pH'].isnull()) | (bdb_filt['pH'] < 9) & (bdb_filt['pH'] > 5))]\
+                            ((bdb_filt['pH'].isnull()) | ((bdb_filt['pH'] < 9) & (bdb_filt['pH'] > 5)))]\
                                 .drop_duplicates(ignore_index=True)
 
         # Exclude multi-chain protein complexes
@@ -136,10 +136,11 @@ class BindingDB(Database):
             # Extract the relation operator before the value gets stripped down to digits.
             # No prefix (a bare number) defaults to '='.
             relation = raw_val.str.extract(r'^\s*(>=|<=|>|<)?')[0].fillna('=')
-            numeric_str = raw_val.str.replace(r'[^0-9.]', '', regex=True)
+            # Extract the first number, keeping sign and scientific-notation exponent
+            numeric_str = raw_val.str.extract(r'([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)', expand=False)
             value_nM = pd.to_numeric(numeric_str, errors='coerce')
 
-            valid = value_nM.notnull() & (value_nM != 0)
+            valid = value_nM.notnull() & (value_nM > 0)
             sub = sub.loc[valid].copy()
             if len(sub) == 0:
                 continue
