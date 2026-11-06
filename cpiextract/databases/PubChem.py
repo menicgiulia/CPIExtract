@@ -116,7 +116,7 @@ class PubChem(Database):
         pubchem_filt.loc[untrusted, activity_col] = np.nan
 
         # Remove duplicate measurements
-        dedup_cols = [identifier] + [c for c in ['CID', 'Target GeneID']
+        dedup_cols = [identifier] + [c for c in ['CID', 'Target GeneID','Activity Outcome']
                                      if c != identifier and c in pubchem_filt.columns]
         pubchem_filt = pubchem_filt.drop_duplicates(subset=dedup_cols + [activity_col, 'Activity Name']).copy()
 
