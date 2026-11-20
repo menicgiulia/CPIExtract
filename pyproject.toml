@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,7 +9,8 @@ requires-python = ">=3.8"
 description = "CPIExtract is a software package to collect and harmonize small molecule and protein interactions with support for stereoisomer matching."
 readme = { file = "README.md", content-type = "text/markdown" }
 keywords = ["data-science", "bioinformatics", "cheminformatics", "proteins", "network-science", "data-harmonization", "binding-affinity", "chemical-compounds", "stereoisomers", "inchikey"]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE.txt"]
 authors = [
     { name = "Michael Sebek" },
     { name = "Andrea Piras" },
