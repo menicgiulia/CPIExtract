@@ -4,7 +4,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    version='0.1.8',
+    version='0.2.0',
     name='cpiextract',
     author='Michael Sebek, Andrea Piras, Lucía Prieto Santamaría, Shi Chenghao, Gordana Ispirova, Giulia Menichetti',
     author_email='giulia.menichetti@channing.harvard.edu',
